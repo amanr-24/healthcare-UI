@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+// import reactLogo from './assets/react.svg'
+// import viteLogo from '/vite.svg'
 import HealthcareDashboard from './components/HealthCareDashboard.jsx';
 import axios from "axios"
 function App() {
-  const [count, setCount] = useState(0)
+  // const [count, setCount] = useState(0)
   const [totalPatient,setTotalPatient]=useState(0);
   const [activePatients,setActivePatients]=useState(0);
   useEffect(()=>{
