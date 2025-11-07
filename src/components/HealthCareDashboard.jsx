@@ -32,6 +32,21 @@ const HealthcareDashboard = () => {
   const [demographics, setDemographics] = useState(null);
   const [inventory, setInventory] = useState(null);
 
+  // 💠 For demographic tabs
+const [activeDemoTab, setActiveDemoTab] = useState("age");
+const [demoData, setDemoData] = useState([]);
+const [selectedDemoDept, setSelectedDemoDept] = useState("all");
+const COLORS = ["#ef4444", "#14b8a6", "#3b82f6", "#22c55e", "#facc15", "#c084fc"];
+
+// dynamic key for label
+const nameKey =
+  activeDemoTab === "age"
+    ? "ageGroup"
+    : activeDemoTab === "gender"
+    ? "gender"
+    : "type";
+
+
   // Fetch utility function
   const fetchData = async (endpoint, key, setter) => {
     setLoading(prev => ({ ...prev, [key]: true }));
@@ -168,6 +183,31 @@ fetchData('/appointments', 'appointments', (data) => {
       fetchData(endpoint, 'patients', setPatients);
     }
   }, [patientFilter, activeTab]);
+
+  // 💠 Fetch demographics dynamically when tab or department changes
+useEffect(() => {
+  const fetchDemo = async () => {
+    setLoading((prev) => ({ ...prev, demographics: true }));
+    try {
+      const deptParam =
+        selectedDemoDept && selectedDemoDept !== "all"
+          ? `?department=${encodeURIComponent(selectedDemoDept)}`
+          : "";
+      const res = await fetch(
+        `${API_BASE_URL}/demographics/${activeDemoTab}${deptParam}`
+      );
+      const data = await res.json();
+      setDemoData(data);
+    } catch (err) {
+      console.error("Error fetching demographics:", err);
+    } finally {
+      setLoading((prev) => ({ ...prev, demographics: false }));
+    }
+  };
+
+  fetchDemo();
+}, [activeDemoTab, selectedDemoDept]);
+
 
   // Loading component
   const LoadingSpinner = () => (
@@ -571,36 +611,6 @@ fetchData('/appointments', 'appointments', (data) => {
                     )}
                   </div>
 
-                  {/* Demographics Pie */}
-                  <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                    <h3 className="text-xl font-bold text-gray-900 mb-6">Patient Demographics</h3>
-                    {loading.demographics ? (
-                      <LoadingSpinner />
-                    ) : demographics?.byGender ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie 
-                            data={demographics.byGender} 
-                            cx="50%" 
-                            cy="50%" 
-                            labelLine={false} 
-                            label={({ gender, percentage }) => `${gender}: ${percentage}%`}
-                            outerRadius={100} 
-                            fill="#8884d8" 
-                            dataKey="count"
-                          >
-                            {demographics.byGender.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color || ['#3b82f6', '#ec4899', '#10b981'][index]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <p className="text-gray-500 text-center py-8">No demographic data available</p>
-                    )}
-                  </div>
-                </div>
 
                 {/* Revenue by Department Pie Chart */}
 <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
@@ -639,6 +649,84 @@ fetchData('/appointments', 'appointments', (data) => {
   ) : (
     <p className="text-gray-500 text-center py-8">No revenue data available</p>
   )}
+</div>
+{/* Demographics Pie */}
+<div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="text-xl font-bold text-gray-900">Patient Demographics</h3>
+
+    {/* Department Filter */}
+    <select
+      value={selectedDemoDept}
+      onChange={(e) => setSelectedDemoDept(e.target.value)}
+      className="border border-gray-300 text-sm text-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+    >
+      <option value="all">All Departments</option>
+      {departments.map((dept) => (
+        <option key={dept.department_id} value={dept.name}>
+          {dept.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Tabs */}
+  <div className="flex gap-2 border-b mb-4">
+    {["age", "gender", "insurance"].map((tab) => (
+      <button
+        key={tab}
+        onClick={() => setActiveDemoTab(tab)}
+        className={`px-4 py-2 text-sm font-medium rounded-t-lg border ${
+          activeDemoTab === tab
+            ? "bg-blue-50 text-blue-600 border-blue-400"
+            : "text-gray-500 hover:text-gray-700 border-transparent"
+        }`}
+      >
+        {tab === "age" ? "By Age" : tab === "gender" ? "By Gender" : "By Insurance"}
+      </button>
+    ))}
+  </div>
+
+  {loading.demographics ? (
+    <LoadingSpinner />
+  ) : demoData.length > 0 ? (
+    <ResponsiveContainer width="100%" height={300}>
+      <PieChart>
+        <Pie
+          data={demoData}
+          cx="50%"
+          cy="50%"
+          outerRadius={100}
+          dataKey="count"
+          nameKey={nameKey}
+          labelLine={false}
+          label={({ name, value, percent }) =>
+            `${name}: ${(percent * 100).toFixed(1)}%`
+          }
+        >
+          {demoData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={entry.color || COLORS[index % COLORS.length]}
+            />
+          ))}
+        </Pie>
+        <Tooltip
+          formatter={(value, name, props) => {
+            const total = demoData.reduce((a, b) => a + b.count, 0);
+            const pct = ((value / total) * 100).toFixed(1);
+            return [`${value} (${pct}%)`, name];
+          }}
+        />
+        <Legend />
+      </PieChart>
+    </ResponsiveContainer>
+  ) : (
+    <p className="text-gray-500 text-center py-8">
+      No demographic data available
+    </p>
+  )}
+</div>
 </div>
 
 
