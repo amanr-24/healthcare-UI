@@ -132,8 +132,10 @@ fetchData('/appointments', 'appointments', (data) => {
     fetchData('/quality', 'quality', setQualityMetrics);
     fetchData('/demographics', 'demographics', setDemographics);
     fetchData('/inventory', 'inventory', setInventory);
+    fetchData('/financial', 'financial', setFinancialData);
+
     // fetch raw, store raw and attempt a best-effort map to { department, revenue }
-fetchData('/financial/department', 'deptRevenue', (res) => {
+    fetchData('/financial/department', 'deptRevenue', (res) => {
   console.log('raw dept revenue response:', res);
   // response format from your backend: { message: "...", data: [...] }
   const arr = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
@@ -975,6 +977,7 @@ fetchData('/financial/department', 'deptRevenue', (res) => {
       <p className="text-gray-500 text-center py-16">No appointments found</p>
     )}
   </div>
+  
 )}
 
 
