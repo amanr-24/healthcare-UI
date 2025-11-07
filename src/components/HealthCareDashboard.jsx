@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Users, Calendar, AlertCircle, TrendingUp, Activity, Menu, X, LogOut, Settings, Bell, BarChart3, Filter, Download, Plus, Stethoscope, Pill, MoreVertical, Search, Phone, Mail, Loader, DollarSign, Clipboard, Package } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Clock, Star } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:47815/api';
 
@@ -673,33 +674,91 @@ fetchData('/appointments', 'appointments', (data) => {
               </div>
             )}
 
-            {/* DEPARTMENTS TAB */}
-            {activeTab === 'departments' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-3xl font-black text-gray-900">Department Management</h2>
-                    <p className="text-gray-500 mt-1">Overview of all hospital departments</p>
-                  </div>
-                  <button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2">
-                    <Plus size={20} /> <span>Add Department</span>
-                  </button>
-                </div>
-                {loading.departments ? (
-                  <LoadingSpinner />
-                ) : error.departments ? (
-                  <ErrorMessage message={error.departments} />
-                ) : departments.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {departments.map((dept) => (
-                      <DepartmentCard key={dept.department_id} dept={dept} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-16">No departments found</p>
-                )}
-              </div>
-            )}
+         {activeTab === 'departments' && (
+  <div className="space-y-8">
+    {/* ✅ Department Header First */}
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-3xl font-black text-gray-900">Department Management</h2>
+        <p className="text-gray-500 mt-1">Overview of all hospital departments</p>
+      </div>
+      <button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2">
+        <Plus size={20} /> <span>Add Department</span>
+      </button>
+    </div>
+
+    {/* ✅ Stats Row Below the Title */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+            <Users size={22} />
+          </div>
+          <p className="text-sm font-semibold text-gray-600">Total Patients</p>
+        </div>
+        <p className="text-3xl font-bold text-gray-900 mb-1">{overviewStats?.total_patients || 12400}</p>
+        <p className="text-emerald-600 text-sm font-medium flex items-center space-x-1">
+          <TrendingUp size={14} /> <span>+23 from previous period</span>
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-cyan-100 text-cyan-600">
+            <Stethoscope size={22} />
+          </div>
+          <p className="text-sm font-semibold text-gray-600">Staff Members</p>
+        </div>
+        <p className="text-3xl font-bold text-gray-900 mb-1">{overviewStats?.total_staff || 300}</p>
+        <p className="text-emerald-600 text-sm font-medium flex items-center space-x-1">
+          <TrendingUp size={14} /> <span>+8 from previous period</span>
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-yellow-100 text-yellow-600">
+            <Clock size={22} />
+          </div>
+          <p className="text-sm font-semibold text-gray-600">Avg. Wait Time</p>
+        </div>
+        <p className="text-3xl font-bold text-gray-900 mb-1">45 min</p>
+        <p className="text-emerald-600 text-sm font-medium flex items-center space-x-1">
+          <TrendingUp size={14} /> <span>+15 from previous period</span>
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <div className="flex items-center space-x-3 mb-3">
+          <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-green-100 text-green-600">
+            <Star size={22} />
+          </div>
+          <p className="text-sm font-semibold text-gray-600">Patient Satisfaction</p>
+        </div>
+        <p className="text-3xl font-bold text-gray-900 mb-1">4.2</p>
+        <p className="text-emerald-600 text-sm font-medium flex items-center space-x-1">
+          <TrendingUp size={14} /> <span>+84 from previous period</span>
+        </p>
+      </div>
+    </div>
+
+    {/* ✅ Department Cards Grid */}
+    {loading.departments ? (
+      <LoadingSpinner />
+    ) : error.departments ? (
+      <ErrorMessage message={error.departments} />
+    ) : departments.length > 0 ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {departments.map((dept) => (
+          <DepartmentCard key={dept.department_id} dept={dept} />
+        ))}
+      </div>
+    ) : (
+      <p className="text-gray-500 text-center py-16">No departments found</p>
+    )}
+  </div>
+)}
+
 
             {/* PATIENTS TAB */}
             {activeTab === 'patients' && (
