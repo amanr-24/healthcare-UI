@@ -23,6 +23,8 @@ const HealthcareDashboard = () => {
   const [patients, setPatients] = useState([]);
   const [staff, setStaff] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [appointmentTrends, setAppointmentTrends] = useState([]);
+  const [appointmentTypes, setAppointmentTypes] = useState([]);
   const [vitalAlerts, setVitalAlerts] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const [qualityMetrics, setQualityMetrics] = useState(null);
@@ -68,7 +70,63 @@ const HealthcareDashboard = () => {
 
     fetchData('/patients/active', 'patients', setPatients);
     fetchData('/staff', 'staff', setStaff);
-    fetchData('/appointments', 'appointments', setAppointments);
+fetchData('/appointments', 'appointments', (data) => {
+  // ✅ Filter: only doctor appointments
+  const doctorAppointments = data.filter(
+    (appt) => appt.doctorName && appt.doctorName !== "N/A"
+  );
+
+  // ✅ Update appointments table
+  setAppointments(doctorAppointments);
+
+  // ✅ 1. Group by Month (Trends)
+  const monthMap = {};
+  doctorAppointments.forEach((item) => {
+    const date = new Date(item.date);
+    const month = date.toLocaleString("default", { month: "short", year: "numeric" });
+
+    if (!monthMap[month]) {
+      monthMap[month] = { total: 0, completed: 0, cancelled: 0, scheduled: 0 };
+    }
+
+    monthMap[month].total++;
+    if (item.status === "Completed") monthMap[month].completed++;
+    if (item.status === "Cancelled") monthMap[month].cancelled++;
+    if (item.status === "Scheduled") monthMap[month].scheduled++;
+  });
+
+  const trends = Object.entries(monthMap).map(([month, stats]) => ({
+    month,
+    ...stats,
+  }));
+
+  // ✅ 2. Group by Doctor (for Doctor Chart)
+  const doctorMap = {};
+  doctorAppointments.forEach((item) => {
+    const doctor = item.doctorName || "Unknown Doctor";
+    if (!doctorMap[doctor]) {
+      doctorMap[doctor] = { totalAppointments: 0, completed: 0, cancelled: 0, scheduled: 0 };
+    }
+
+    doctorMap[doctor].totalAppointments++;
+    if (item.status === "Completed") doctorMap[doctor].completed++;
+    if (item.status === "Cancelled") doctorMap[doctor].cancelled++;
+    if (item.status === "Scheduled") doctorMap[doctor].scheduled++;
+  });
+
+  const doctorStats = Object.entries(doctorMap).map(([doctor, stats]) => ({
+    doctor,
+    ...stats,
+  }));
+
+  // ✅ Set Data
+  setAppointmentTrends(trends);
+  setAppointmentTypes(doctorStats); // renamed variable reused for chart
+});
+
+
+
+
     fetchData('/vitals', 'vitals', setVitalAlerts);
     fetchData('/activities/recent', 'activities', setRecentActivities);
     fetchData('/quality', 'quality', setQualityMetrics);
@@ -694,75 +752,233 @@ fetchData('/financial/department', 'deptRevenue', (res) => {
               </div>
             )}
 
-            {/* APPOINTMENTS TAB */}
-            {activeTab === 'appointments' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-3xl font-black text-gray-900">Appointments</h2>
-                    <p className="text-gray-500 mt-1">Schedule and manage appointments</p>
-                  </div>
-                  <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2">
-                    <Plus size={20} /> <span>Schedule Appointment</span>
-                  </button>
-                </div>
-                {loading.appointments ? (
-                  <LoadingSpinner />
-                ) : error.appointments ? (
-                  <ErrorMessage message={error.appointments} />
-                ) : appointments.length > 0 ? (
-                  <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Patient</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Doctor</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Date</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Time</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Type</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Status</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {appointments.map((appt) => (
-                          <tr key={appt.appointment_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                            <td className="px-6 py-4 font-semibold text-gray-900">{appt.patientName}</td>
-                            <td className="px-6 py-4 text-gray-600">{appt.doctorName || 'N/A'}</td>
-                            <td className="px-6 py-4 text-gray-900 font-medium">
-                              {new Date(appt.date).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 text-gray-900">{appt.time || 'N/A'}</td>
-                            <td className="px-6 py-4">
-                              <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                                {appt.type}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                appt.status === 'Completed' ? 'bg-green-100 text-green-700' :
-                                appt.status === 'Scheduled' ? 'bg-blue-100 text-blue-700' :
-                                appt.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
-                                'bg-yellow-100 text-yellow-700'
-                              }`}>
-                                {appt.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                                <MoreVertical size={18} className="text-gray-600" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-center py-16">No appointments found</p>
-                )}
-              </div>
+ {/* ✅ APPOINTMENTS TAB */}
+{activeTab === 'appointments' && (
+  <div className="space-y-6">
+    {/* Header */}
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-3xl font-black text-gray-900">Appointments</h2>
+        <p className="text-gray-500 mt-1">Schedule and manage appointments</p>
+      </div>
+      <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2">
+        <Plus size={20} /> <span>Schedule Appointment</span>
+      </button>
+    </div>
+
+    {/* Loading / Error */}
+    {loading.appointments ? (
+      <LoadingSpinner />
+    ) : error.appointments ? (
+      <ErrorMessage message={error.appointments} />
+    ) : appointments.length > 0 ? (
+      <>
+        {/* ✅ Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 📈 Appointment Trends Chart */}
+          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              Appointment Trends
+            </h3>
+            {appointmentTrends?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={appointmentTrends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Total"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="completed"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    name="Completed"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="cancelled"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    name="Cancelled"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="scheduled"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Scheduled"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500 text-center py-8">
+                No appointment trend data available
+              </p>
             )}
+          </div>
+
+          {/* 🧑‍⚕️ Appointments per Doctor Chart */}
+          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              Appointments per Doctor
+            </h3>
+            {appointmentTypes?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart
+                  data={appointmentTypes}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 50 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="doctor"
+                    interval={0}
+                    angle={-25}
+                    textAnchor="end"
+                    height={70}
+                    tick={{ fontSize: 11 }}
+                    stroke="#6b7280"
+                  />
+                  <YAxis stroke="#3b82f6" />
+                  <Tooltip
+                    formatter={(value, name) => `${value} Appointments`}
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Legend />
+                  <Bar
+                    dataKey="totalAppointments"
+                    fill="#3b82f6"
+                    name="Total"
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="completed"
+                    fill="#10b981"
+                    name="Completed"
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="cancelled"
+                    fill="#ef4444"
+                    name="Cancelled"
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="scheduled"
+                    fill="#f59e0b"
+                    name="Scheduled"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500 text-center py-8">
+                No doctor appointment data available
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* ✅ Appointment Table */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Patient
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Doctor
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Date
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Time
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Type
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {appointments.map((appt) => (
+                <tr
+                  key={appt.appointment_id}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition"
+                >
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    {appt.patientName}
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {appt.doctorName || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 text-gray-900 font-medium">
+                    {new Date(appt.date).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-gray-900">{appt.time || "N/A"}</td>
+                  <td className="px-6 py-4">
+                    <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                      {appt.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        appt.status === "Completed"
+                          ? "bg-green-100 text-green-700"
+                          : appt.status === "Scheduled"
+                          ? "bg-blue-100 text-blue-700"
+                          : appt.status === "Cancelled"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {appt.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button className="p-2 hover:bg-gray-100 rounded-lg transition">
+                      <MoreVertical size={18} className="text-gray-600" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    ) : (
+      <p className="text-gray-500 text-center py-16">No appointments found</p>
+    )}
+  </div>
+)}
+
+
+
 
             {/* STAFF TAB */}
             {activeTab === 'staff' && (
