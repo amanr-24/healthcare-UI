@@ -51,7 +51,18 @@ const HealthcareDashboard = () => {
   // Initial data load
   useEffect(() => {
     fetchData('/overview', 'overview', setOverviewStats);
-    fetchData('/departments', 'departments', setDepartments);
+    fetchData('/departments', 'departments', (data) => {
+  const mapped = data.map(dept => ({
+    ...dept,
+    total_patients: dept.totalPatients,
+    total_staff: (dept.staff?.doctors || 0) + (dept.staff?.nurses || 0) + (dept.staff?.support || 0),
+    capacity: dept.capacity,
+    occupancy_rate: dept.currentOccupancy,
+    department_head: dept.department_head || 'N/A',
+  }));
+  setDepartments(mapped);
+});
+
     fetchData('/patients/active', 'patients', setPatients);
     fetchData('/staff', 'staff', setStaff);
     fetchData('/appointments', 'appointments', setAppointments);
@@ -442,7 +453,7 @@ const HealthcareDashboard = () => {
                       <ErrorMessage message={error.departments} />
                     ) : departments.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={departments.slice(0, 6)}>
+                        <BarChart data={departments}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                           <XAxis dataKey="name" stroke="#6b7280" />
                           <YAxis stroke="#6b7280" />
