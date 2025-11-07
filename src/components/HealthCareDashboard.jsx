@@ -49,30 +49,46 @@ const HealthcareDashboard = () => {
   };
 
   // Initial data load
-  useEffect(() => {
-    fetchData('/overview', 'overview', setOverviewStats);
-    fetchData('/departments', 'departments', (data) => {
-  const mapped = data.map(dept => ({
-    ...dept,
-    total_patients: dept.totalPatients,
-    total_staff: (dept.staff?.doctors || 0) + (dept.staff?.nurses || 0) + (dept.staff?.support || 0),
-    capacity: dept.capacity,
-    occupancy_rate: dept.currentOccupancy,
-    department_head: dept.department_head || 'N/A',
-  }));
-  setDepartments(mapped);
-});
+// Replace your useEffect with this corrected version:
 
-    fetchData('/patients/active', 'patients', setPatients);
-    fetchData('/staff', 'staff', setStaff);
-    fetchData('/appointments', 'appointments', setAppointments);
-    fetchData('/vitals', 'vitals', setVitalAlerts);
-    fetchData('/activities/recent', 'activities', setRecentActivities);
-    fetchData('/quality', 'quality', setQualityMetrics);
-    fetchData('/demographics', 'demographics', setDemographics);
-    fetchData('/inventory', 'inventory', setInventory);
-    fetchData('/financial/year/2025', 'financial', setFinancialData);
-  }, []);
+useEffect(() => {
+  fetchData('/overview', 'overview', setOverviewStats);
+  
+  // Fixed departments fetch with proper occupancy calculation
+  fetchData('/departments', 'departments', (data) => {
+    const mapped = data.map(dept => {
+      const totalPatients = dept.totalPatients || 0;
+      const capacity = dept.capacity || 1;
+      
+      // Calculate occupancy rate properly - should never exceed 100%
+      // Use the calculated value, not the backend's currentOccupancy
+      const calculatedOccupancy = Math.min(
+        Math.round((totalPatients / capacity) * 100),
+        100
+      );
+      
+      return {
+        ...dept,
+        total_patients: totalPatients,
+        total_staff: (dept.staff?.doctors || 0) + (dept.staff?.nurses || 0) + (dept.staff?.support || 0),
+        capacity: capacity,
+        occupancy_rate: calculatedOccupancy, // Now correctly calculated
+        department_head: dept.department_head || 'N/A',
+      };
+    });
+    setDepartments(mapped);
+  });
+
+  fetchData('/patients/active', 'patients', setPatients);
+  fetchData('/staff', 'staff', setStaff);
+  fetchData('/appointments', 'appointments', setAppointments);
+  fetchData('/vitals', 'vitals', setVitalAlerts);
+  fetchData('/activities/recent', 'activities', setRecentActivities);
+  fetchData('/quality', 'quality', setQualityMetrics);
+  fetchData('/demographics', 'demographics', setDemographics);
+  fetchData('/inventory', 'inventory', setInventory);
+  fetchData('/financial/year/2025', 'financial', setFinancialData);
+}, []);
 
   // Refetch patients on filter change
   useEffect(() => {
