@@ -1,63 +1,58 @@
-<<<<<<< HEAD
 import React from "react";
-import { Routes, Route } from "react-router-dom";
-import HealthCareDashboard from "./components/HealthCareDashboard";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Sidebar from "./components/layout/Sidebar";
+import Topbar from "./components/layout/Topbar";
+import LoadingError from "./components/layout/LoadingError";
 
-// ✅ Add your page imports here (make sure file names match)
-import AppointmentsPage from "./pages/AppointmentsPage";
-import PatientsPage from "./pages/PatientsPage";
-import ReportsPage from "./pages/ReportsPage";
-import SchedulePage from "./pages/SchedulePage";
+// ✅ Import all dashboard pages
+import OverviewTab from "./components/dashboard/OverviewTab";
+import DepartmentTab from "./components/dashboard/DepartmentTab";
+import AppointmentTab from "./components/dashboard/AppointmentTab";
+import FinancialTab from "./components/dashboard/FinancialTab";
+import InventoryTab from "./components/dashboard/InventoryTab";
+import PatientTab from "./components/dashboard/PatientTab";
+import StaffTab from "./components/dashboard/StaffTab";
+import VitalsTab from "./components/dashboard/VitalsTab";
 
 export default function App() {
   return (
-    <Routes>
-      {/* Default Dashboard Page */}
-      <Route path="/" element={<HealthCareDashboard />} />
+    <Router>
+      <div className="flex h-screen bg-gray-50 text-gray-900">
+        {/* ✅ Sidebar */}
+        <Sidebar />
 
-      {/* ✅ These pages make your navigation links work */}
-      <Route path="/appointments" element={<AppointmentsPage />} />
-      <Route path="/patients" element={<PatientsPage />} />
-      <Route path="/reports" element={<ReportsPage />} />
-      <Route path="/schedule" element={<SchedulePage />} />
-    </Routes>
+        {/* ✅ Main Content Area */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Topbar */}
+          <Topbar />
+
+          {/* Main Page Content */}
+          <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50">
+            <Routes>
+              <Route path="/" element={<Navigate to="/overview" replace />} />
+              <Route path="/overview" element={<OverviewTab />} />
+              <Route path="/departments" element={<DepartmentTab />} />
+              <Route path="/appointments" element={<AppointmentTab />} />
+              <Route path="/financials" element={<FinancialTab />} />
+              <Route path="/inventory" element={<InventoryTab />} />
+              <Route path="/patients" element={<PatientTab />} />
+              <Route path="/staff" element={<StaffTab />} />
+              <Route path="/vitals" element={<VitalsTab />} />
+
+              {/* Fallback route */}
+              <Route
+                path="*"
+                element={
+                  <LoadingError
+                    error="404 - Page Not Found"
+                    message="The page you are looking for doesn't exist."
+                  />
+                }
+              />
+            </Routes>
+          </main>
+        </div>
+      </div>
+    </Router>
   );
 }
-=======
-import { useEffect, useState } from "react";
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-import HealthcareDashboard from "./components/HealthCareDashboard.jsx";
-import axios from "axios";
-function App() {
-  // const [count, setCount] = useState(0)
-  const [totalPatient, setTotalPatient] = useState(0);
-  const [activePatients, setActivePatients] = useState(0);
-  useEffect(() => {
-    const getAllPatients = async () => {
-      const response = await axios.get(
-        "	https://healthcare-dashboard-n8rs.onrender.com/api/patients/"
-      );
-      setTotalPatient(response.data.length);
-    };
-    const getActivePatients = async () => {
-      const activePatientsResponse = await axios.get(
-        "https://healthcare-dashboard-n8rs.onrender.com/api/patients/active"
-      );
-      setActivePatients(activePatientsResponse.data.length);
-    };
-    getAllPatients();
-    getActivePatients();
-  }, []);
-  return (
-    <>
-      <HealthcareDashboard
-        totalPatient={totalPatient}
-        activePatients={activePatients}
-      />
-    </>
-  );
-}
-
-export default App;
->>>>>>> ef1c5546e93ce507852211db30e3750994ec3ccf
