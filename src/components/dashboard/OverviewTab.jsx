@@ -1,0 +1,261 @@
+import React, { useMemo } from "react";
+import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+import LoadingError from "../layout/LoadingError";
+import {
+  Users,
+  Heart,
+  Calendar,
+  AlertCircle,
+  Bed,
+  Users2,
+  Bell,
+  Activity,
+} from "lucide-react";
+
+export default function OverviewTab({
+  loading = {},
+  error = {},
+  overviewStats = {},
+  departments = [],
+  demographics = {},
+  recentActivities = [],
+  deptRevenue = [],
+}) {
+  // ✅ Department Overview Chart
+  const deptChartOptions = useMemo(() => {
+    const names =
+      departments?.map((d) => d.name || d.department || "Unknown") || [];
+    const patients =
+      departments?.map((d) => Number(d.total_patients) || 0) || [];
+    const staff = departments?.map((d) => Number(d.total_staff) || 0) || [];
+
+    const finalNames = names.length ? names : [
+      "Cardiology",
+      "Orthopedics",
+      "Neurology",
+      "Pediatrics",
+      "General Medicine",
+      "Emergency",
+      "Oncology",
+      "ENT",
+    ];
+    const finalPatients = patients.length
+      ? patients
+      : [320, 250, 180, 130, 225, 75, 125, 140];
+    const finalStaff = staff.length ? staff : [35, 23, 18, 27, 45, 55, 12, 17];
+
+    return {
+      chart: { type: "column", backgroundColor: "transparent", height: 250 },
+      title: { text: "" },
+      xAxis: { categories: finalNames },
+      yAxis: { title: { text: "Count" } },
+      legend: { itemStyle: { fontWeight: "bold" } },
+      plotOptions: { column: { borderRadius: 5, groupPadding: 0.05 } },
+      series: [
+        { name: "Patients", data: finalPatients, color: "#3b82f6" },
+        { name: "Staff", data: finalStaff, color: "#10b981" },
+      ],
+      credits: { enabled: false },
+    };
+  }, [departments]);
+
+  // ✅ Patient Demographics
+  const genderChartOptions = useMemo(() => ({
+    chart: { type: "pie", backgroundColor: "transparent", height: 250 },
+    title: { text: "" },
+    tooltip: { pointFormat: "<b>{point.y}%</b>" },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        dataLabels: {
+          enabled: true,
+          format: "{point.name}: {point.y}%",
+        },
+      },
+    },
+    series: [
+      {
+        name: "Patients",
+        data: [
+          { name: "Male", y: 56, color: "#3b82f6" },
+          { name: "Female", y: 44, color: "#ec4899" },
+        ],
+      },
+    ],
+    credits: { enabled: false },
+  }), []);
+
+  // ✅ Revenue Chart
+  const revenueChartOptions = useMemo(() => ({
+    chart: { type: "pie", backgroundColor: "transparent", height: 250 },
+    title: { text: "" },
+    tooltip: { pointFormat: "Revenue: <b>₹{point.y:.1f}M</b>" },
+    plotOptions: {
+      pie: {
+        dataLabels: { enabled: true, format: "{point.name}: ₹{point.y:.1f}M" },
+      },
+    },
+    series: [
+      {
+        name: "Revenue",
+        colorByPoint: true,
+        data: [
+          { name: "Dept 1", y: 195 },
+          { name: "Dept 2", y: 193 },
+          { name: "Dept 3", y: 186 },
+          { name: "Dept 4", y: 196 },
+          { name: "Dept 5", y: 198 },
+          { name: "Dept 6", y: 194 },
+          { name: "Dept 7", y: 192 },
+          { name: "Dept 8", y: 204 },
+        ],
+      },
+    ],
+    credits: { enabled: false },
+  }), []);
+
+  return (
+    <div className="space-y-8">
+      {/* ✅ Overview Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <CompactCard label="Total Patients" value="12400" trend="+12%" trendUp icon={Users} color="from-blue-600 to-blue-400" />
+        <CompactCard label="Active Patients" value="416" trend="+8%" trendUp icon={Heart} color="from-emerald-600 to-emerald-400" />
+        <CompactCard label="Appointments" value="832" trend="+15%" trendUp icon={Calendar} color="from-purple-600 to-purple-400" />
+        <CompactCard label="Critical Alerts" value="28" trend="-5%" trendUp={false} icon={AlertCircle} color="from-red-600 to-red-400" />
+        <CompactCard label="Bed Occupancy" value="85.1%" trend="+52" trendUp icon={Bed} color="from-yellow-500 to-yellow-300" />
+        <CompactCard label="Staff On Duty" value="120" trend="+45" trendUp icon={Users2} color="from-sky-500 to-blue-300" />
+      </div>
+
+      {/* ✅ Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ChartCard title="Department Overview" chart={deptChartOptions} />
+        <ChartCard title="Patient Demographics" chart={genderChartOptions} />
+        <ChartCard title="Revenue by Department" chart={revenueChartOptions} />
+      </div>
+
+      {/* ✅ Vital Signs & Recent Activities */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Vital Signs */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            Vital Signs Monitoring
+          </h3>
+
+          <p className="text-gray-700 font-semibold mb-3">
+            Patient P•1 - Recent Vital Signs
+          </p>
+
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b text-gray-700 font-semibold">
+                <th className="p-2 text-left">Date</th>
+                <th className="p-2 text-left">Heart Rate</th>
+                <th className="p-2 text-left">BP</th>
+                <th className="p-2 text-left">Temp</th>
+                <th className="p-2 text-left">O₂ Sat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { date: "June 1, 2024", hr: 80, bp: "138/86", temp: "99°F", o2: "94%" },
+                { date: "June 7, 2024", hr: 78, bp: "136/84", temp: "98.8°F", o2: "95%" },
+                { date: "June 14, 2024", hr: 75, bp: "130/82", temp: "98.7°F", o2: "96%" },
+                { date: "June 21, 2024", hr: 72, bp: "125/80", temp: "98.4°F", o2: "98%" },
+              ].map((v, idx) => (
+                <tr key={idx} className="border-b hover:bg-gray-50 transition">
+                  <td className="p-2 font-medium text-gray-900">{v.date}</td>
+                  <td className="p-2">{v.hr}</td>
+                  <td className="p-2">{v.bp}</td>
+                  <td className="p-2">{v.temp}</td>
+                  <td className="p-2">{v.o2}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h4 className="mt-4 font-semibold text-gray-900">Active Alerts</h4>
+          <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center justify-between">
+            <div>
+              <p className="font-bold text-yellow-800">P•1 - Blood Pressure</p>
+              <p className="text-yellow-700 text-sm">
+                Elevated blood pressure reading (140/88) requires monitoring
+              </p>
+            </div>
+            <span className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">
+              Medium
+            </span>
+          </div>
+        </div>
+
+        {/* Recent Activities */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Activities</h3>
+          {[
+            { name: "Emma D. admitted to Emergency D.", date: "6/12/2024 02:30 PM", status: "Critical", color: "red" },
+            { name: "X-Ray M. #1 scheduled for maintenance", date: "6/12/2024 02:15 PM", status: "In Treatment", color: "yellow" },
+            { name: "Dr. James R. is now on call", date: "6/12/2024 02:00 PM", status: "Active", color: "green" },
+            { name: "Patient P•1 - High blood pressure reading", date: "6/12/2024 01:45 PM", status: "In Treatment", color: "yellow" },
+            { name: "Michael B. scheduled for follow-up", date: "6/12/2024 01:30 PM", status: "Active", color: "green" },
+          ].map((a, i) => (
+            <div key={i} className="flex items-start space-x-4 border-b last:border-0 py-3">
+              <div className="p-2 rounded-lg bg-gray-100 text-gray-600">
+                <Activity size={18} />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 text-sm">{a.name}</p>
+                <p className="text-xs text-gray-500 mt-1">{a.date}</p>
+              </div>
+              <span
+                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                  a.color === "red"
+                    ? "bg-red-100 text-red-700"
+                    : a.color === "yellow"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-green-100 text-green-700"
+                }`}
+              >
+                {a.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ✅ Compact Stat Card */
+function CompactCard({ label, value, trend, trendUp, icon: Icon, color }) {
+  return (
+    <div className="flex flex-col justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-all duration-200">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs text-gray-500 font-semibold truncate">{label}</p>
+        <div className={`p-2 rounded-md bg-gradient-to-r ${color} text-white shadow-sm`}>
+          <Icon size={14} />
+        </div>
+      </div>
+      <h3 className="text-lg font-bold text-gray-900">{value}</h3>
+      <div className="flex items-center text-[11px] mt-1">
+        <span
+          className={`${
+            trendUp ? "text-green-500" : "text-red-500"
+          } font-semibold flex items-center`}
+        >
+          {trendUp ? "▲" : "▼"} {trend}
+        </span>
+        <span className="ml-1 text-gray-500">vs previous</span>
+      </div>
+    </div>
+  );
+}
+
+/* ✅ Reusable Chart Card */
+function ChartCard({ title, chart }) {
+  return (
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">{title}</h3>
+      <HighchartsReact highcharts={Highcharts} options={chart} />
+    </div>
+  );
+}

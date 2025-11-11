@@ -1,1 +1,10 @@
-@import "tailwindcss";
+/* stylelint-disable at-rule-no-unknown */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+body {
+  background-color: #F9FAFB;
+  color: #111827;
+}
+/* stylelint-enable at-rule-no-unknown */
