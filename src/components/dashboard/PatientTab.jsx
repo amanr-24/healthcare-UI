@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import LoadingError from "../layout/LoadingError";
 import PatientRow from "../shared/PatientRow";
 import axios from "axios";
+import Loader from "../layout/Loader"; // 👈 Import Loader component
 
 export default function PatientTab() {
   const [patients, setPatients] = useState([]);
@@ -29,7 +30,6 @@ export default function PatientTab() {
         }
 
         const response = await axios.get(endpoint);
-
         const data = Array.isArray(response.data)
           ? response.data
           : response.data?.data || [];
@@ -83,42 +83,38 @@ export default function PatientTab() {
         </div>
       </div>
 
-      {/* ✅ Loading / Error */}
-      <LoadingError loading={loading} error={error} />
-
-      {/* ✅ Patient Table */}
-      {!loading && !error && (
-        <>
-          {patients.length > 0 ? (
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-              <table className="w-full text-sm text-left text-gray-700">
-                <thead className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
-                  <tr>
-                    <th className="px-6 py-4 font-bold">Patient</th>
-                    <th className="px-6 py-4 font-bold">Details</th>
-                    <th className="px-6 py-4 font-bold">Department</th>
-                    <th className="px-6 py-4 font-bold">Doctor</th>
-                    <th className="px-6 py-4 font-bold">Vitals</th>
-                    <th className="px-6 py-4 font-bold">Severity</th>
-                    <th className="px-6 py-4 font-bold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patients.map((patient) => (
-                    <PatientRow
-                      key={patient.id || patient._id}
-                      patient={patient}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-16">
-              No patients found
-            </p>
-          )}
-        </>
+      {/* ✅ Loader / Error Handling */}
+      {loading ? (
+        <Loader /> // 👈 Show loader while fetching data
+      ) : error ? (
+        <LoadingError loading={loading} error={error} />
+      ) : patients.length > 0 ? (
+        // ✅ Patient Table
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <table className="w-full text-sm text-left text-gray-700">
+            <thead className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+              <tr>
+                <th className="px-6 py-4 font-bold">Patient</th>
+                <th className="px-6 py-4 font-bold">Details</th>
+                <th className="px-6 py-4 font-bold">Department</th>
+                <th className="px-6 py-4 font-bold">Doctor</th>
+                <th className="px-6 py-4 font-bold">Vitals</th>
+                <th className="px-6 py-4 font-bold">Severity</th>
+                <th className="px-6 py-4 font-bold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {patients.map((patient) => (
+                <PatientRow
+                  key={patient.id || patient._id}
+                  patient={patient}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-gray-500 text-center py-16">No patients found</p>
       )}
     </div>
   );

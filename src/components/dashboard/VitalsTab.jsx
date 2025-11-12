@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import LoadingError from "../layout/LoadingError";
+import Loader from "../layout/Loader"; // 👈 Added loader import
 
 export default function VitalsTab() {
   const [vitalAlerts, setVitalAlerts] = useState([]);
@@ -38,7 +39,9 @@ export default function VitalsTab() {
       setSelectedPatient(patientName);
       setShowModal(true);
 
-      const res = await axios.get(`http://localhost:47815/api/vitals/alerts/${patientId}`);
+      const res = await axios.get(
+        `http://localhost:47815/api/vitals/alerts/${patientId}`
+      );
       setPatientAlerts(res.data || []);
     } catch (err) {
       console.error("Error fetching alerts:", err);
@@ -51,17 +54,26 @@ export default function VitalsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-black text-gray-900">Vital Signs & Alerts</h2>
-        <p className="text-gray-500 mt-1">Real-time monitoring of critical patients</p>
+        <h2 className="text-3xl font-black text-gray-900">
+          Vital Signs & Alerts
+        </h2>
+        <p className="text-gray-500 mt-1">
+          Real-time monitoring of critical patients
+        </p>
       </div>
 
-      <LoadingError loading={loading.vitals} error={error.vitals} />
-
-      {!loading.vitals && !error.vitals && (
+      {/* 🔹 Loader or Error State */}
+      {loading.vitals ? (
+        <Loader />
+      ) : error.vitals ? (
+        <LoadingError loading={loading.vitals} error={error.vitals} />
+      ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Patient vitals */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Patient Vitals</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              Patient Vitals
+            </h3>
 
             {vitalAlerts?.length ? (
               <div className="space-y-4">
@@ -72,16 +84,38 @@ export default function VitalsTab() {
                   >
                     <p className="font-bold text-gray-900">{v.patientName}</p>
                     <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
-                      <div><span className="text-gray-500">BP:</span><span className="ml-2 font-semibold">{v.bloodPressure || "N/A"}</span></div>
-                      <div><span className="text-gray-500">HR:</span><span className="ml-2 font-semibold">{v.heartRate || "N/A"}</span></div>
-                      <div><span className="text-gray-500">Temp:</span><span className="ml-2 font-semibold">{v.temperature || "N/A"}°C</span></div>
-                      <div><span className="text-gray-500">SpO₂:</span><span className="ml-2 font-semibold">{v.oxygenSaturation || "N/A"}%</span></div>
+                      <div>
+                        <span className="text-gray-500">BP:</span>
+                        <span className="ml-2 font-semibold">
+                          {v.bloodPressure || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">HR:</span>
+                        <span className="ml-2 font-semibold">
+                          {v.heartRate || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Temp:</span>
+                        <span className="ml-2 font-semibold">
+                          {v.temperature || "N/A"}°C
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">SpO₂:</span>
+                        <span className="ml-2 font-semibold">
+                          {v.oxygenSaturation || "N/A"}%
+                        </span>
+                      </div>
                     </div>
 
                     {v.activeAlerts > 0 && (
                       <div className="mt-3">
                         <button
-                          onClick={() => handleViewAlerts(v.patientId, v.patientName)}
+                          onClick={() =>
+                            handleViewAlerts(v.patientId, v.patientName)
+                          }
                           className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold hover:bg-red-200 transition"
                         >
                           {v.activeAlerts} Active Alerts
@@ -92,13 +126,17 @@ export default function VitalsTab() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">No vital signs data</p>
+              <p className="text-gray-500 text-center py-8">
+                No vital signs data
+              </p>
             )}
           </div>
 
           {/* Right: Summary */}
           <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Alert Summary</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              Alert Summary
+            </h3>
             <div className="space-y-4">
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                 <p className="text-red-600 font-bold">Critical Alerts</p>
@@ -132,7 +170,9 @@ export default function VitalsTab() {
             </h3>
 
             {alertLoading ? (
-              <p className="text-gray-500 text-center">Loading alerts...</p>
+              <div className="flex justify-center items-center h-40">
+                <Loader /> {/* 👈 Added loader in modal */}
+              </div>
             ) : patientAlerts.length > 0 ? (
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {patientAlerts.map((alert) => (

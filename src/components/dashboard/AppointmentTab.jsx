@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import LoadingError from "../layout/LoadingError";
+import Loader from "../layout/Loader"; // 👈 Added loader import
 import axios from "axios";
 import { Users, BookOpen } from "lucide-react";
 
@@ -38,37 +39,7 @@ export default function AppointmentTab() {
       } catch (err) {
         console.error("❌ Error fetching appointments:", err);
         setError({ appointments: "Failed to load appointments data." });
-
-        // ✅ Mock fallback data
-        setAppointments([
-          {
-            appointment_id: 1,
-            patientName: "John Doe",
-            doctorName: "Dr. Smith",
-            date: "2025-11-09",
-            time: "10:00 AM",
-            type: "Consultation",
-            status: "Completed",
-          },
-          {
-            appointment_id: 2,
-            patientName: "Alice Johnson",
-            doctorName: "Dr. Brown",
-            date: "2025-11-10",
-            time: "11:30 AM",
-            type: "Follow-up",
-            status: "Scheduled",
-          },
-          {
-            appointment_id: 3,
-            patientName: "David Lee",
-            doctorName: "Dr. Parker",
-            date: "2025-11-11",
-            time: "3:00 PM",
-            type: "Checkup",
-            status: "Cancelled",
-          },
-        ]);
+        setAppointments([]); // ❌ No fallback mock data
       } finally {
         setLoading({ appointments: false });
       }
@@ -183,108 +154,113 @@ export default function AppointmentTab() {
         </button>
       </div>
 
-      {/* Loading/Error */}
-      <LoadingError loading={loading.appointments} error={error.appointments} />
-
-      {!loading.appointments && !error.appointments && (
-        appointments?.length ? (
-          <>
-            {/* ✅ Charts Section (KEEPING THESE) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Appointment Trends</h3>
-                <HighchartsReact highcharts={Highcharts} options={trendChartOptions} />
-              </div>
-
-              <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Appointments per Doctor</h3>
-                <HighchartsReact highcharts={Highcharts} options={perDoctorChartOptions} />
-              </div>
+      {/* 🔹 Loader / Error */}
+      {loading.appointments ? (
+        <Loader /> // 👈 Show spinner during loading
+      ) : error.appointments ? (
+        <LoadingError loading={loading.appointments} error={error.appointments} />
+      ) : appointments?.length ? (
+        <>
+          {/* ✅ Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Appointment Trends</h3>
+              <HighchartsReact highcharts={Highcharts} options={trendChartOptions} />
             </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Patient</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Doctor</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Date</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Time</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Type</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Status</th>
+            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Appointments per Doctor</h3>
+              <HighchartsReact highcharts={Highcharts} options={perDoctorChartOptions} />
+            </div>
+          </div>
+
+          {/* ✅ Appointment Table */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Patient</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Doctor</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((a) => (
+                  <tr
+                    key={a.appointment_id}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition"
+                  >
+                    <td className="px-6 py-4 font-semibold text-gray-900">{a.patientName}</td>
+                    <td className="px-6 py-4 text-gray-600">{a.doctorName}</td>
+                    <td className="px-6 py-4 text-gray-900 font-medium">
+                      {new Date(a.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-gray-900">{a.time}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                        {a.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          a.status === "Completed"
+                            ? "bg-green-100 text-green-700"
+                            : a.status === "Scheduled"
+                            ? "bg-blue-100 text-blue-700"
+                            : a.status === "Cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {a.status}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {appointments.map((a) => (
-                    <tr key={a.appointment_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 font-semibold text-gray-900">{a.patientName}</td>
-                      <td className="px-6 py-4 text-gray-600">{a.doctorName}</td>
-                      <td className="px-6 py-4 text-gray-900 font-medium">
-                        {new Date(a.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 text-gray-900">{a.time}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                          {a.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            a.status === "Completed"
-                              ? "bg-green-100 text-green-700"
-                              : a.status === "Scheduled"
-                              ? "bg-blue-100 text-blue-700"
-                              : a.status === "Cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
-                        >
-                          {a.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ✅ Appointment Management Section */}
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">
+                Appointment Management
+              </h3>
+              <button
+                onClick={() => navigate("/schedule")}
+                className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100"
+              >
+                Manage Schedule
+              </button>
             </div>
 
-            {/* ✅ Appointment Management Section (Removed "Appointments" Card Only) */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mt-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Appointment Management</h3>
-                <button
-                  onClick={() => navigate("/schedule")}
-                  className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100"
-                >
-                  Manage Schedule
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <CardItem
-                  icon={<Users />}
-                  color="blue"
-                  title="Patients"
-                  desc="View and manage patients"
-                  linkText="Go to Patients →"
-                  onClick={() => navigate("/patients")}
-                />
-                <CardItem
-                  icon={<BookOpen />}
-                  color="purple"
-                  title="Reports"
-                  desc="Generate appointment reports"
-                  linkText="Generate Reports →"
-                  onClick={() => navigate("/reports")}
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CardItem
+                icon={<Users />}
+                color="blue"
+                title="Patients"
+                desc="View and manage patients"
+                linkText="Go to Patients →"
+                onClick={() => navigate("/patients")}
+              />
+              <CardItem
+                icon={<BookOpen />}
+                color="purple"
+                title="Reports"
+                desc="Generate appointment reports"
+                linkText="Generate Reports →"
+                onClick={() => navigate("/reports")}
+              />
             </div>
-          </>
-        ) : (
-          <p className="text-gray-500 text-center py-16">No appointments found</p>
-        )
+          </div>
+        </>
+      ) : (
+        <p className="text-gray-500 text-center py-16">No appointments found</p>
       )}
     </div>
   );

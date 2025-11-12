@@ -3,6 +3,7 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import axios from "axios";
+import Loader from "../layout/Loader";
 
 export default function FinancialTab() {
   const [availableYears, setAvailableYears] = useState([]);
@@ -41,15 +42,21 @@ export default function FinancialTab() {
         setError("");
 
         // 🔹 Monthly summary
-        const monthlyRes = await axios.get(`${API_BASE}/summary/monthly/year/${selectedYear}`);
+        const monthlyRes = await axios.get(
+          `${API_BASE}/summary/monthly/year/${selectedYear}`
+        );
         setFinancialData(monthlyRes.data.data || []);
 
         // 🔹 Yearly summary (for stat cards)
-        const summaryRes = await axios.get(`${API_BASE}/summary/year/${selectedYear}`);
+        const summaryRes = await axios.get(
+          `${API_BASE}/summary/year/${selectedYear}`
+        );
         setSummary(summaryRes.data.data);
       } catch (err) {
         console.error("Error fetching financial data:", err);
-        setError(err.response?.data?.message || "Failed to fetch financial data");
+        setError(
+          err.response?.data?.message || "Failed to fetch financial data"
+        );
       } finally {
         setLoading(false);
       }
@@ -59,7 +66,7 @@ export default function FinancialTab() {
   }, [selectedYear]);
 
   // ✅ Prepare chart data
-   const chartData = useMemo(() => {
+  const chartData = useMemo(() => {
     if (!Array.isArray(financialData) || financialData.length === 0) return [];
 
     return financialData.map((item, index) => {
@@ -81,7 +88,9 @@ export default function FinancialTab() {
   const totalRevenue = summary?.total_revenue || 0;
   const totalExpenses = summary?.total_expenses || 0;
   const netProfit = summary?.total_profit || totalRevenue - totalExpenses;
-  const profitMargin = totalRevenue ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0;
+  const profitMargin = totalRevenue
+    ? ((netProfit / totalRevenue) * 100).toFixed(2)
+    : 0;
 
   // ✅ Highcharts Configuration
   const financialChartOptions = useMemo(
@@ -161,7 +170,9 @@ export default function FinancialTab() {
         <div className="bg-blue-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
           <div>
             <p className="text-sm opacity-90">Total Revenue</p>
-            <h3 className="text-3xl font-extrabold">{formatCr(totalRevenue)}</h3>
+            <h3 className="text-3xl font-extrabold">
+              {formatCr(totalRevenue)}
+            </h3>
           </div>
           <DollarSign size={32} />
         </div>
@@ -169,7 +180,9 @@ export default function FinancialTab() {
         <div className="bg-red-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
           <div>
             <p className="text-sm opacity-90">Total Expenses</p>
-            <h3 className="text-3xl font-extrabold">{formatCr(totalExpenses)}</h3>
+            <h3 className="text-3xl font-extrabold">
+              {formatCr(totalExpenses)}
+            </h3>
           </div>
           <TrendingDown size={32} />
         </div>
@@ -198,7 +211,7 @@ export default function FinancialTab() {
         </h3>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Loading financial data…</p>
+          <Loader />
         ) : error ? (
           <p className="text-red-500 text-sm">Error: {error}</p>
         ) : (

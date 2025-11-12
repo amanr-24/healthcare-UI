@@ -4,6 +4,7 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import DepartmentCard from "../shared/DepartmentCard";
 import LoadingError from "../layout/LoadingError";
+import Loader from "../layout/Loader"; // 👈 Added loader import
 import { Plus } from "lucide-react";
 
 export default function DepartmentTab() {
@@ -41,8 +42,7 @@ export default function DepartmentTab() {
         // Extract appointment counts dynamically
         const appointments = deptData.map((d) => ({
           name: d.name || "Unknown",
-          appointments:
-            Number(d.totalAppointments || d.todayPatients || 0),
+          appointments: Number(d.totalAppointments || d.todayPatients || 0),
         }));
         setDeptApptCounts(appointments);
 
@@ -140,19 +140,21 @@ export default function DepartmentTab() {
     };
   }, [staffDistribution]);
 
-  if (loading.departments || loading.stats)
-    return <p className="text-gray-500 text-center mt-10">Loading departments...</p>;
-
-  if (error.departments)
-    return <LoadingError message={error.departments} />;
+  // ✅ Loader or Error Handling
+  if (loading.departments || loading.stats) return <Loader />; // 👈 Replaced text with Loader
+  if (error.departments) return <LoadingError message={error.departments} />;
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-black text-gray-900">Department Management</h2>
-          <p className="text-gray-500 mt-1">Overview of all hospital departments</p>
+          <h2 className="text-3xl font-black text-gray-900">
+            Department Management
+          </h2>
+          <p className="text-gray-500 mt-1">
+            Overview of all hospital departments
+          </p>
         </div>
         <button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2">
           <Plus size={18} /> <span>Add Department</span>
@@ -165,22 +167,35 @@ export default function DepartmentTab() {
           Appointments by Department
         </h3>
         {deptApptCounts.length > 0 ? (
-          <HighchartsReact highcharts={Highcharts} options={appointmentChartOptions} />
+          <HighchartsReact
+            highcharts={Highcharts}
+            options={appointmentChartOptions}
+          />
         ) : (
-          <p className="text-gray-500 text-sm text-center">No appointment data available</p>
+          <p className="text-gray-500 text-sm text-center">
+            No appointment data available
+          </p>
         )}
       </div>
 
       {/* Chart: Staff Distribution */}
       <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Staff Distribution</h3>
-        {staffDistribution.doctors || staffDistribution.nurses || staffDistribution.support ? (
-          <HighchartsReact highcharts={Highcharts} options={staffPieOptions} />
+        <h3 className="text-xl font-bold text-gray-900 mb-6">
+          Staff Distribution
+        </h3>
+        {staffDistribution.doctors ||
+        staffDistribution.nurses ||
+        staffDistribution.support ? (
+          <HighchartsReact
+            highcharts={Highcharts}
+            options={staffPieOptions}
+          />
         ) : (
-          <p className="text-gray-500 text-sm text-center">No staff data available</p>
+          <p className="text-gray-500 text-sm text-center">
+            No staff data available
+          </p>
         )}
       </div>
-
     </div>
   );
 }

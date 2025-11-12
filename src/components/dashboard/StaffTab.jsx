@@ -3,6 +3,7 @@ import LoadingError from "../layout/LoadingError";
 import StaffCard from "../shared/StaffCard";
 import { Plus } from "lucide-react";
 import axios from "axios";
+import Loader from "../layout/Loader"; // 👈 Added Loader import
 
 export default function StaffTab() {
   const [staff, setStaff] = useState([]);
@@ -12,11 +13,13 @@ export default function StaffTab() {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
+        setLoading(true);
         const res = await axios.get("http://localhost:47815/api/staff");
         setStaff(res.data);
+        setError(null);
       } catch (err) {
         console.error("❌ Error fetching staff:", err);
-        setError(err.message);
+        setError(err.message || "Failed to load staff data");
       } finally {
         setLoading(false);
       }
@@ -26,9 +29,12 @@ export default function StaffTab() {
 
   return (
     <div className="space-y-6">
+      {/* 🔹 Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-black text-gray-900">Medical Staff Directory</h2>
+          <h2 className="text-3xl font-black text-gray-900">
+            Medical Staff Directory
+          </h2>
           <p className="text-gray-500 mt-1">
             Manage doctors, nurses, and support staff
           </p>
@@ -38,20 +44,21 @@ export default function StaffTab() {
         </button>
       </div>
 
-      <LoadingError loading={loading} error={error} />
-
-      {!loading && !error && (
-        staff?.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {staff.map((m) => (
-              <StaffCard key={m.id} member={m} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-16">
-            No staff members found
-          </p>
-        )
+      {/* 🔹 Loader or Error */}
+      {loading ? (
+        <Loader /> // 👈 show spinner while fetching
+      ) : error ? (
+        <LoadingError loading={loading} error={error} />
+      ) : staff?.length ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {staff.map((m) => (
+            <StaffCard key={m.id} member={m} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-center py-16">
+          No staff members found
+        </p>
       )}
     </div>
   );

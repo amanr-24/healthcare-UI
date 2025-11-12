@@ -3,6 +3,7 @@ import axios from "axios";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import LoadingError from "../layout/LoadingError";
+import Loader from "../layout/Loader"; // 👈 added loader import
 import {
   Users,
   Heart,
@@ -103,7 +104,7 @@ export default function OverviewTab() {
   }, [demographics]);
 
   // ✅ Loading / Error
-  if (loading) return <p className="text-gray-600 text-center">Loading overview...</p>;
+  if (loading) return <Loader />; // 👈 replaced text with loader
   if (error) return <LoadingError message={error} />;
 
   return (
@@ -134,7 +135,6 @@ export default function OverviewTab() {
           icon={Calendar}
           color="from-purple-600 to-purple-400"
         />
-        
         <CompactCard
           label="Critical Alerts"
           value="28"
