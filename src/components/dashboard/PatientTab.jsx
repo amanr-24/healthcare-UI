@@ -11,23 +11,28 @@ export default function PatientTab() {
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:47815";
 
-  // ✅ Fetch patients from backend
+  // ✅ Fetch patients based on selected filter
   useEffect(() => {
     const fetchPatients = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const endpoint =
-          filter === "all"
-            ? `${API_URL}/api/patients`
-            : `${API_URL}/api/patients/active`;
+        let endpoint = `${API_URL}/api/patients`;
+
+        // 🧠 Determine which API endpoint to hit based on filter
+        if (filter === "active") {
+          endpoint = `${API_URL}/api/patients/active`;
+        } else if (filter !== "all") {
+          // for status-based filters (in-treatment, scheduled, etc.)
+          endpoint = `${API_URL}/api/patients/status/${filter}`;
+        }
 
         const response = await axios.get(endpoint);
 
-        // ✅ Safe parsing: handle array or wrapped object
-        const data =
-          Array.isArray(response.data) ? response.data : response.data?.data || [];
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data?.data || [];
 
         setPatients(data);
       } catch (err) {
@@ -54,15 +59,19 @@ export default function PatientTab() {
           </p>
         </div>
 
-        {/* ✅ Filter and Button */}
+        {/* ✅ Filter Dropdown and Add Button */}
         <div className="flex space-x-3">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-xl text-sm text-gray-700 focus:outline-none focus:border-blue-500"
           >
+            {/* 🧠 Dropdown Options */}
             <option value="all">All Patients</option>
-            <option value="active">Active Only</option>
+            <option value="in treatment">In Treatment</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="critical">Critical</option>
+            <option value="discharged">Discharged</option>
           </select>
 
           <button
