@@ -35,21 +35,27 @@ export default function OverviewTab() {
       try {
         setLoading(true);
 
-        const [
-          deptRes,
-          genderRes,
-          ageRes,
-          insuranceRes,
-          vitalsRes,
-          actRes,
-        ] = await Promise.all([
-          axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/departments"),
-          axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/demographics/gender"),
-          axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/demographics/age"),
-          axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/demographics/insurance"),
-          axios.get("http://localhost:47815/api/vitals"),
-          axios.get("http://localhost:47815/api/activities/recent"),
-        ]);
+        const [deptRes, genderRes, ageRes, insuranceRes, vitalsRes, actRes] =
+          await Promise.all([
+            axios.get(
+              "https://healthcare-dashboard-n8rs.onrender.com/api/departments"
+            ),
+            axios.get(
+              "https://healthcare-dashboard-n8rs.onrender.com/api/demographics/gender"
+            ),
+            axios.get(
+              "https://healthcare-dashboard-n8rs.onrender.com/api/demographics/age"
+            ),
+            axios.get(
+              "https://healthcare-dashboard-n8rs.onrender.com/api/demographics/insurance"
+            ),
+            axios.get(
+              "https://healthcare-backend-szmd.onrender.com/api/vitals"
+            ),
+            axios.get(
+              "https://healthcare-backend-szmd.onrender.com/api/activities/recent"
+            ),
+          ]);
 
         setDepartments(deptRes.data || []);
         setGenderDemographics(genderRes.data || []);
@@ -167,7 +173,12 @@ export default function OverviewTab() {
     if (selectedDemo === "age") return ageDemographics;
     if (selectedDemo === "insurance") return insuranceDemographics;
     return [];
-  }, [selectedDemo, genderDemographics, ageDemographics, insuranceDemographics]);
+  }, [
+    selectedDemo,
+    genderDemographics,
+    ageDemographics,
+    insuranceDemographics,
+  ]);
 
   const demographicChartOptions = useMemo(
     () => makePieOptions(selectedDemographicData),
@@ -240,7 +251,9 @@ export default function OverviewTab() {
         {/* ========== SINGLE DROPDOWN DEMOGRAPHIC CHART ========== */}
         <div className="bg-white rounded-xl shadow-md border p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Patient Demographics</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              Patient Demographics
+            </h3>
 
             <select
               value={selectedDemo}
@@ -290,7 +303,11 @@ function CompactCard({ label, value, trend, trendUp, icon: Icon, color }) {
       </div>
       <h3 className="text-lg font-bold">{value}</h3>
 
-      <p className={`text-xs mt-1 ${trendUp ? "text-green-600" : "text-red-500"}`}>
+      <p
+        className={`text-xs mt-1 ${
+          trendUp ? "text-green-600" : "text-red-500"
+        }`}
+      >
         {trendUp ? "▲" : "▼"} {trend}
       </p>
     </div>

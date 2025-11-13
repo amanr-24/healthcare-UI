@@ -17,7 +17,9 @@ export default function StaffTab() {
     const fetchStaff = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:47815/api/staff");
+        const res = await axios.get(
+          "https://healthcare-backend-szmd.onrender.com/api/staff"
+        );
         setStaff(res.data);
         setError(null);
       } catch (err) {

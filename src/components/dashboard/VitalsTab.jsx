@@ -21,7 +21,7 @@ export default function VitalsTab() {
   const fetchVitals = async () => {
     try {
       setLoading({ vitals: true });
-      const res = await axios.get("http://localhost:47815/api/vitals");
+      const res = await axios.get("https://healthcare-backend-szmd.onrender.com/api/vitals");
       setVitalAlerts(res.data || []);
       setError({ vitals: null });
     } catch (err) {
@@ -40,7 +40,7 @@ export default function VitalsTab() {
       setShowModal(true);
 
       const res = await axios.get(
-        `http://localhost:47815/api/vitals/alerts/${patientId}`
+        `https://healthcare-backend-szmd.onrender.com/api/vitals/alerts/${patientId}`
       );
       setPatientAlerts(res.data || []);
     } catch (err) {

@@ -11,7 +11,9 @@ export default function PatientTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:47815";
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "https://healthcare-backend-szmd.onrender.com";
 
   // 🔄 Fetch patients
   useEffect(() => {
