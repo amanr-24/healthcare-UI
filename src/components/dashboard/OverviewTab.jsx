@@ -38,16 +38,16 @@ export default function OverviewTab() {
         const [deptRes, genderRes, ageRes, insuranceRes, vitalsRes, actRes] =
           await Promise.all([
             axios.get(
-              "https://healthcare-dashboard-n8rs.onrender.com/api/departments"
+              "https://healthcare-backend-szmd.onrender.com/api/departments"
             ),
             axios.get(
-              "https://healthcare-dashboard-n8rs.onrender.com/api/demographics/gender"
+              "https://healthcare-backend-szmd.onrender.com/api/demographics/gender"
             ),
             axios.get(
-              "https://healthcare-dashboard-n8rs.onrender.com/api/demographics/age"
+              "https://healthcare-backend-szmd.onrender.com/api/demographics/age"
             ),
             axios.get(
-              "https://healthcare-dashboard-n8rs.onrender.com/api/demographics/insurance"
+              "https://healthcare-backend-szmd.onrender.com/api/demographics/insurance"
             ),
             axios.get(
               "https://healthcare-backend-szmd.onrender.com/api/vitals"
