@@ -26,9 +26,9 @@ export default function Sidebar({
       ? items
       : [
           { id: "overview", label: "Overview", icon: BarChart3 },
-          { id: "departments", label: "Departments", icon: Package },
-          { id: "appointments", label: "Appointments", icon: Calendar },
           { id: "patients", label: "Patients", icon: Users },
+          { id: "appointments", label: "Appointments", icon: Calendar },
+          { id: "departments", label: "Departments", icon: Package },
           { id: "staff", label: "Staff", icon: Heart },
           { id: "vitals", label: "Vitals", icon: Activity },
           { id: "financials", label: "Financials", icon: DollarSign },

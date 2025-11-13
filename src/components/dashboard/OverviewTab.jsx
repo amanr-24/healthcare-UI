@@ -3,7 +3,7 @@ import axios from "axios";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import LoadingError from "../layout/LoadingError";
-import Loader from "../layout/Loader"; // 👈 added loader import
+import Loader from "../layout/Loader";
 import {
   Users,
   Heart,
@@ -15,45 +15,65 @@ import {
 } from "lucide-react";
 
 export default function OverviewTab() {
-  // ✅ States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // MAIN DATA STATES
   const [departments, setDepartments] = useState([]);
-  const [demographics, setDemographics] = useState([]);
+  const [genderDemographics, setGenderDemographics] = useState([]);
+  const [ageDemographics, setAgeDemographics] = useState([]);
+  const [insuranceDemographics, setInsuranceDemographics] = useState([]);
   const [vitals, setVitals] = useState([]);
   const [activities, setActivities] = useState([]);
 
-  // ✅ Fetch all data
+  // SELECTED DEMOGRAPHIC (dropdown)
+  const [selectedDemo, setSelectedDemo] = useState("gender");
+
+  // =================== FETCH DATA ===================
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
         setLoading(true);
-        const [deptRes, demoRes, vitalsRes, actRes] = await Promise.all([
+
+        const [
+          deptRes,
+          genderRes,
+          ageRes,
+          insuranceRes,
+          vitalsRes,
+          actRes,
+        ] = await Promise.all([
           axios.get("http://localhost:47815/api/departments"),
           axios.get("http://localhost:47815/api/demographics/gender"),
+          axios.get("http://localhost:47815/api/demographics/age"),
+          axios.get("http://localhost:47815/api/demographics/insurance"),
           axios.get("http://localhost:47815/api/vitals"),
           axios.get("http://localhost:47815/api/activities/recent"),
         ]);
 
         setDepartments(deptRes.data || []);
-        setDemographics(demoRes.data || []);
+        setGenderDemographics(genderRes.data || []);
+        setAgeDemographics(ageRes.data || []);
+        setInsuranceDemographics(insuranceRes.data || []);
         setVitals(vitalsRes.data || []);
         setActivities(actRes.data || []);
+
         setError(null);
       } catch (err) {
-        console.error("Error fetching overview data:", err);
+        console.log("ERROR:", err);
         setError("Failed to fetch overview data.");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    fetchAll();
   }, []);
 
-  // ✅ Department Chart
+  // =================== DEPARTMENT CHART ===================
   const deptChartOptions = useMemo(() => {
     const names = departments.map((d) => d.name || "Unknown");
-    const patients = departments.map((d) => Number(d.totalPatients) || 0);
+    const patients = departments.map((d) => d.totalPatients || 0);
     const staff = departments.map((d) => {
       const s = d.staff || {};
       return (s.doctors || 0) + (s.nurses || 0) + (s.support || 0);
@@ -62,54 +82,106 @@ export default function OverviewTab() {
     return {
       chart: { type: "column", backgroundColor: "transparent", height: 250 },
       title: { text: "" },
-      xAxis: { categories: names, title: { text: "Departments" } },
+
+      xAxis: { categories: names },
       yAxis: { title: { text: "Count" } },
-      legend: { itemStyle: { fontWeight: "bold" } },
+
       plotOptions: { column: { borderRadius: 5, groupPadding: 0.05 } },
+
       series: [
         { name: "Patients", data: patients, color: "#3b82f6" },
         { name: "Staff", data: staff, color: "#10b981" },
       ],
+
       credits: { enabled: false },
     };
   }, [departments]);
 
-  // ✅ Gender Demographics Chart
-  const genderChartOptions = useMemo(() => {
-    const genderData =
-      Array.isArray(demographics) && demographics.length > 0
-        ? demographics.map((item) => ({
-            name: item.gender || "Unknown",
-            y: parseFloat(item.percentage) || 0,
-            color: item.color || "#8884d8",
-          }))
-        : [
-            { name: "Male", y: 0, color: "#3b82f6" },
-            { name: "Female", y: 0, color: "#ec4899" },
-          ];
+  // =================== MAKE PIE FUNCTION ===================
+  const makePieOptions = (items, height = 320) => {
+    if (!items || items.length === 0) {
+      return {
+        chart: { type: "pie", backgroundColor: "transparent", height },
+        title: { text: "" },
+        series: [{ data: [] }],
+        credits: { enabled: false },
+      };
+    }
+
+    const processed = items.map((item) => ({
+      name: item.label || item.gender || item.type || "Unknown",
+      y: Number(item.percentage) || 0,
+      color: item.color || undefined,
+    }));
 
     return {
-      chart: { type: "pie", backgroundColor: "transparent", height: 250 },
+      chart: { type: "pie", backgroundColor: "transparent", height },
       title: { text: "" },
+
       tooltip: { pointFormat: "<b>{point.y:.1f}%</b>" },
+
       plotOptions: {
         pie: {
           allowPointSelect: true,
-          dataLabels: { enabled: true, format: "{point.name}: {point.y:.1f}%" },
+          showInLegend: true,
+          borderColor: "#fff",
+          borderWidth: 2,
+
+          dataLabels: {
+            enabled: true,
+            format: "{point.name}: {point.y}%",
+            style: {
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#374151",
+            },
+            distance: 20,
+            connectorColor: "#9CA3AF",
+          },
         },
       },
-      series: [{ name: "Patients", data: genderData }],
+
+      legend: {
+        layout: "horizontal",
+        align: "center",
+        verticalAlign: "bottom",
+        itemStyle: { fontWeight: "600", fontSize: "12px" },
+        symbolRadius: 4,
+      },
+
+      series: [
+        {
+          name: "Patients",
+          innerSize: "40%", // donut
+          data: processed,
+        },
+      ],
+
       credits: { enabled: false },
     };
-  }, [demographics]);
+  };
 
-  // ✅ Loading / Error
-  if (loading) return <Loader />; // 👈 replaced text with loader
+  // =================== SINGLE DROPDOWN-BASED DEMOGRAPHIC ===================
+  const selectedDemographicData = useMemo(() => {
+    if (selectedDemo === "gender") return genderDemographics;
+    if (selectedDemo === "age") return ageDemographics;
+    if (selectedDemo === "insurance") return insuranceDemographics;
+    return [];
+  }, [selectedDemo, genderDemographics, ageDemographics, insuranceDemographics]);
+
+  const demographicChartOptions = useMemo(
+    () => makePieOptions(selectedDemographicData),
+    [selectedDemographicData]
+  );
+
+  // =================== LOADING / ERROR ===================
+  if (loading) return <Loader />;
   if (error) return <LoadingError message={error} />;
 
+  // =================== UI RENDER ===================
   return (
     <div className="space-y-8">
-      {/* ✅ Overview Cards */}
+      {/* ======= Overview Cards ======= */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <CompactCard
           label="Total Patients"
@@ -161,133 +233,135 @@ export default function OverviewTab() {
         />
       </div>
 
-      {/* ✅ Charts */}
+      {/* ======= ROW 1: Department + Single Demographic ======= */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ChartCard title="Department Overview" chart={deptChartOptions} />
-        <ChartCard title="Patient Demographics" chart={genderChartOptions} />
+
+        {/* ========== SINGLE DROPDOWN DEMOGRAPHIC CHART ========== */}
+        <div className="bg-white rounded-xl shadow-md border p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Patient Demographics</h3>
+
+            <select
+              value={selectedDemo}
+              onChange={(e) => setSelectedDemo(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="gender">By Gender</option>
+              <option value="age">By Age</option>
+              <option value="insurance">By Insurance</option>
+            </select>
+          </div>
+
+          <HighchartsReact
+            highcharts={Highcharts}
+            options={demographicChartOptions}
+          />
+        </div>
       </div>
 
-      {/* ✅ Vital Signs & Recent Activities */}
+      {/* ======= ROW 2: Vitals + Activities ======= */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Vital Signs */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Vital Signs Monitoring
-          </h3>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b text-gray-700 font-semibold">
-                <th className="p-2 text-left">Patient</th>
-                <th className="p-2 text-left">Date</th>
-                <th className="p-2 text-left">Heart Rate</th>
-                <th className="p-2 text-left">BP</th>
-                <th className="p-2 text-left">Temp</th>
-                <th className="p-2 text-left">O₂ Sat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vitals.map((v, idx) => (
-                <tr key={idx} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-2 font-medium text-gray-900">{v.patientName}</td>
-                  <td className="p-2">
-                    {new Date(v.lastUpdated).toLocaleDateString("en-IN")}
-                  </td>
-                  <td className="p-2">{v.heartRate}</td>
-                  <td className="p-2">{v.bloodPressure}</td>
-                  <td className="p-2">{v.temperature}°F</td>
-                  <td className="p-2">{v.oxygenSaturation}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ✅ Recent Activities */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Activities</h3>
-
-          {activities.length === 0 ? (
-            <p className="text-gray-500 text-sm">No recent activities found.</p>
-          ) : (
-            activities.map((a) => (
-              <div
-                key={a.id}
-                className="flex items-start space-x-4 border-b last:border-0 py-3"
-              >
-                <div
-                  className={`p-2 rounded-lg shadow-sm ${
-                    a.priority === "High"
-                      ? "bg-red-100 text-red-700"
-                      : a.priority === "Medium"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-green-100 text-green-700"
-                  }`}
-                >
-                  <Activity size={18} />
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900 text-sm">
-                    {a.type}: {a.message}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(a.timestamp).toLocaleString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-
-                <span
-                  className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                    a.priority === "High"
-                      ? "bg-red-100 text-red-700"
-                      : a.priority === "Medium"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-green-100 text-green-700"
-                  }`}
-                >
-                  {a.priority}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
+        <VitalsTable vitals={vitals} />
+        <ActivitiesList activities={activities} />
       </div>
     </div>
   );
 }
 
-/* ✅ Compact Stat Card */
+/* ========== CHILD COMPONENTS ========== */
+function ChartCard({ title, chart }) {
+  return (
+    <div className="bg-white rounded-xl shadow-md border p-5">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">{title}</h3>
+      <HighchartsReact highcharts={Highcharts} options={chart} />
+    </div>
+  );
+}
+
 function CompactCard({ label, value, trend, trendUp, icon: Icon, color }) {
   return (
-    <div className="flex flex-col justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-3 hover:shadow-md transition-all duration-200">
-      <div className="flex items-center justify-between mb-1">
-        <p className="text-xs text-gray-500 font-semibold truncate">{label}</p>
-        <div className={`p-2 rounded-md bg-gradient-to-r ${color} text-white shadow-sm`}>
+    <div className="bg-white rounded-xl shadow-sm border p-3 flex flex-col">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-500">{label}</p>
+        <div className={`p-2 rounded-md bg-gradient-to-r ${color} text-white`}>
           <Icon size={14} />
         </div>
       </div>
-      <h3 className="text-lg font-bold text-gray-900">{value}</h3>
-      <div className="flex items-center text-[11px] mt-1">
-        <span className={`${trendUp ? "text-green-500" : "text-red-500"} font-semibold flex items-center`}>
-          {trendUp ? "▲" : "▼"} {trend}
-        </span>
-        <span className="ml-1 text-gray-500">vs previous</span>
-      </div>
+      <h3 className="text-lg font-bold">{value}</h3>
+
+      <p className={`text-xs mt-1 ${trendUp ? "text-green-600" : "text-red-500"}`}>
+        {trendUp ? "▲" : "▼"} {trend}
+      </p>
     </div>
   );
 }
 
-/* ✅ Chart Card */
-function ChartCard({ title, chart }) {
+function VitalsTable({ vitals }) {
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">{title}</h3>
-      <HighchartsReact highcharts={Highcharts} options={chart} />
+    <div className="bg-white rounded-xl shadow-md border p-6">
+      <h3 className="text-xl font-bold mb-4">Vital Signs Monitoring</h3>
+
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-50 border-b">
+            <th className="p-2 text-left">Patient</th>
+            <th className="p-2 text-left">Date</th>
+            <th className="p-2 text-left">HR</th>
+            <th className="p-2 text-left">BP</th>
+            <th className="p-2 text-left">Temp</th>
+            <th className="p-2 text-left">O₂</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {vitals.map((v, i) => (
+            <tr key={i} className="border-b">
+              <td className="p-2">{v.patientName}</td>
+              <td className="p-2">
+                {new Date(v.lastUpdated).toLocaleDateString("en-IN")}
+              </td>
+              <td className="p-2">{v.heartRate}</td>
+              <td className="p-2">{v.bloodPressure}</td>
+              <td className="p-2">{v.temperature}°F</td>
+              <td className="p-2">{v.oxygenSaturation}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ActivitiesList({ activities }) {
+  return (
+    <div className="bg-white rounded-xl shadow-md border p-6">
+      <h3 className="text-xl font-bold mb-4">Recent Activities</h3>
+
+      {activities.map((a) => (
+        <div key={a.id} className="border-b py-3 flex items-start gap-3">
+          <div
+            className={`p-2 rounded ${
+              a.priority === "High"
+                ? "bg-red-100 text-red-700"
+                : a.priority === "Medium"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-green-100 text-green-700"
+            }`}
+          >
+            <Activity size={18} />
+          </div>
+
+          <div className="flex-1">
+            <p className="font-semibold text-sm">
+              {a.type}: {a.message}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {new Date(a.timestamp).toLocaleString("en-IN")}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

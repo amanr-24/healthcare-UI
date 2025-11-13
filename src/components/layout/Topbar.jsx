@@ -13,15 +13,6 @@ export default function Topbar() {
             Real-time monitoring & management
           </p>
         </div>
-        <div className="flex items-center space-x-6">
-          <div className="hidden md:flex items-center space-x-3 bg-gray-100 px-4 py-2 rounded-lg">
-            <Search size={16} className="text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search patients, doctors..."
-              className="bg-transparent outline-none text-sm text-gray-700 w-64"
-            />
-          </div>
           <div className="flex items-center space-x-3 pl-6 border-l border-gray-200">
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
               AD
@@ -31,7 +22,6 @@ export default function Topbar() {
               <p className="text-gray-500">Hospital Director</p>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

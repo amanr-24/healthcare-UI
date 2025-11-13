@@ -156,7 +156,11 @@ export default function DepartmentTab() {
             Overview of all hospital departments
           </p>
         </div>
-        <button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2">
+
+        <button
+          onClick={() => alert("This feature is under development…")}
+          className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center space-x-2"
+        >
           <Plus size={18} /> <span>Add Department</span>
         </button>
       </div>
@@ -186,10 +190,7 @@ export default function DepartmentTab() {
         {staffDistribution.doctors ||
         staffDistribution.nurses ||
         staffDistribution.support ? (
-          <HighchartsReact
-            highcharts={Highcharts}
-            options={staffPieOptions}
-          />
+          <HighchartsReact highcharts={Highcharts} options={staffPieOptions} />
         ) : (
           <p className="text-gray-500 text-sm text-center">
             No staff data available

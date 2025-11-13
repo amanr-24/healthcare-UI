@@ -3,20 +3,27 @@ import { useNavigate } from "react-router-dom";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import LoadingError from "../layout/LoadingError";
-import Loader from "../layout/Loader"; // 👈 Added loader import
+import Loader from "../layout/Loader";
 import axios from "axios";
-import { Users, BookOpen } from "lucide-react";
 
 export default function AppointmentTab() {
   const navigate = useNavigate();
 
   const [appointments, setAppointments] = useState([]);
+  const [search, setSearch] = useState("");
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [doctorFilter, setDoctorFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState("All");
+  const [customRange, setCustomRange] = useState({ from: "", to: "" });
+
   const [loading, setLoading] = useState({ appointments: false });
   const [error, setError] = useState({ appointments: null });
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:47815";
 
-  // ✅ Fetch appointments from backend
+  // Fetch Appointments
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -35,11 +42,9 @@ export default function AppointmentTab() {
         }));
 
         setAppointments(normalized);
-        setError({ appointments: null });
       } catch (err) {
-        console.error("❌ Error fetching appointments:", err);
+        console.error("Error fetching appointments:", err);
         setError({ appointments: "Failed to load appointments data." });
-        setAppointments([]); // ❌ No fallback mock data
       } finally {
         setLoading({ appointments: false });
       }
@@ -48,21 +53,68 @@ export default function AppointmentTab() {
     fetchAppointments();
   }, [API_URL]);
 
-  // ✅ Compute Trends & Per Doctor Stats
-  const { trends, perDoctor } = useMemo(() => {
-    const doctorAppts = appointments || [];
+  // FILTER LOGIC
+  const filteredAppointments = useMemo(() => {
+    let data = [...appointments];
 
-    // Group by month
+    if (statusFilter !== "All") {
+      data = data.filter((a) => a.status === statusFilter);
+    }
+
+    if (doctorFilter !== "All") {
+      data = data.filter((a) => a.doctorName === doctorFilter);
+    }
+
+    if (dateFilter !== "All") {
+      const today = new Date();
+
+      data = data.filter((a) => {
+        const d = new Date(a.date);
+
+        if (dateFilter === "Today") return d.toDateString() === today.toDateString();
+
+        if (dateFilter === "Week") {
+          const start = new Date();
+          start.setDate(today.getDate() - today.getDay());
+          const end = new Date();
+          end.setDate(start.getDate() + 6);
+          return d >= start && d <= end;
+        }
+
+        if (dateFilter === "Month") {
+          return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+        }
+
+        if (dateFilter === "Range") {
+          const from = new Date(customRange.from);
+          const to = new Date(customRange.to);
+          return d >= from && d <= to;
+        }
+
+        return true;
+      });
+    }
+
+    const s = search.toLowerCase();
+    return data.filter((a) => JSON.stringify(a).toLowerCase().includes(s));
+  }, [appointments, statusFilter, doctorFilter, dateFilter, customRange, search]);
+
+  // CHART DATA
+  const { trends, perDoctor } = useMemo(() => {
+    const doctorAppts = filteredAppointments;
+
     const monthMap = {};
     for (const a of doctorAppts) {
       const d = new Date(a.date);
       const key = d.toLocaleString("default", { month: "short", year: "numeric" });
+
       if (!monthMap[key])
         monthMap[key] = { total: 0, completed: 0, cancelled: 0, scheduled: 0 };
-      monthMap[key].total += 1;
-      if (a.status === "Completed") monthMap[key].completed += 1;
-      else if (a.status === "Cancelled") monthMap[key].cancelled += 1;
-      else if (a.status === "Scheduled") monthMap[key].scheduled += 1;
+
+      monthMap[key].total++;
+      if (a.status === "Completed") monthMap[key].completed++;
+      else if (a.status === "Cancelled") monthMap[key].cancelled++;
+      else if (a.status === "Scheduled") monthMap[key].scheduled++;
     }
 
     const trends = Object.entries(monthMap).map(([month, stats]) => ({
@@ -70,16 +122,22 @@ export default function AppointmentTab() {
       ...stats,
     }));
 
-    // Group by doctor
     const docMap = {};
     for (const a of doctorAppts) {
-      const doc = a.doctorName || "Unknown Doctor";
+      const doc = a.doctorName || "Unknown";
+
       if (!docMap[doc])
-        docMap[doc] = { totalAppointments: 0, completed: 0, cancelled: 0, scheduled: 0 };
-      docMap[doc].totalAppointments += 1;
-      if (a.status === "Completed") docMap[doc].completed += 1;
-      else if (a.status === "Cancelled") docMap[doc].cancelled += 1;
-      else if (a.status === "Scheduled") docMap[doc].scheduled += 1;
+        docMap[doc] = {
+          totalAppointments: 0,
+          completed: 0,
+          cancelled: 0,
+          scheduled: 0,
+        };
+
+      docMap[doc].totalAppointments++;
+      if (a.status === "Completed") docMap[doc].completed++;
+      else if (a.status === "Cancelled") docMap[doc].cancelled++;
+      else if (a.status === "Scheduled") docMap[doc].scheduled++;
     }
 
     const perDoctor = Object.entries(docMap).map(([doctor, stats]) => ({
@@ -88,117 +146,182 @@ export default function AppointmentTab() {
     }));
 
     return { trends, perDoctor };
-  }, [appointments]);
+  }, [filteredAppointments]);
 
-  // ✅ Appointment Trends Chart
-  const trendChartOptions = useMemo(() => {
-    const months = trends.map((t) => t.month);
-    return {
-      chart: { type: "spline", backgroundColor: "transparent" },
-      title: { text: "" },
-      xAxis: { categories: months, labels: { style: { color: "#6b7280" } } },
-      yAxis: {
-        title: { text: "Appointments" },
-        labels: { style: { color: "#6b7280" } },
-      },
-      tooltip: { shared: true },
-      plotOptions: { spline: { marker: { enabled: true } } },
-      series: [
-        { name: "Total", data: trends.map((t) => t.total), color: "#3b82f6" },
-        { name: "Completed", data: trends.map((t) => t.completed), color: "#10b981" },
-        { name: "Cancelled", data: trends.map((t) => t.cancelled), color: "#ef4444" },
-        { name: "Scheduled", data: trends.map((t) => t.scheduled), color: "#f59e0b" },
-      ],
-      legend: { itemStyle: { color: "#374151", fontWeight: "bold" } },
-      credits: { enabled: false },
-    };
-  }, [trends]);
+  const trendChartOptions = {
+    chart: { type: "spline", backgroundColor: "transparent" },
+    title: { text: "" },
+    xAxis: { categories: trends.map((t) => t.month) },
+    yAxis: { title: { text: "Appointments" } },
+    series: [
+      { name: "Total", data: trends.map((t) => t.total) },
+      { name: "Completed", data: trends.map((t) => t.completed) },
+      { name: "Cancelled", data: trends.map((t) => t.cancelled) },
+      { name: "Scheduled", data: trends.map((t) => t.scheduled) },
+    ],
+    credits: { enabled: false },
+  };
 
-  // ✅ Per Doctor Chart
-  const perDoctorChartOptions = useMemo(
-    () => ({
-      chart: { type: "column", backgroundColor: "transparent" },
-      title: { text: "" },
-      xAxis: {
-        categories: perDoctor.map((d) => d.doctor),
-        labels: { rotation: -25, style: { color: "#6b7280", fontSize: "11px" } },
-      },
-      yAxis: {
-        title: { text: "Appointments" },
-        labels: { style: { color: "#6b7280" } },
-      },
-      tooltip: { shared: true, borderRadius: 8 },
-      plotOptions: { column: { borderRadius: 4, groupPadding: 0.08 } },
-      series: [
-        { name: "Total", data: perDoctor.map((d) => d.totalAppointments), color: "#3b82f6" },
-        { name: "Completed", data: perDoctor.map((d) => d.completed), color: "#10b981" },
-        { name: "Cancelled", data: perDoctor.map((d) => d.cancelled), color: "#ef4444" },
-        { name: "Scheduled", data: perDoctor.map((d) => d.scheduled), color: "#f59e0b" },
-      ],
-      legend: { itemStyle: { color: "#374151", fontWeight: "bold" } },
-      credits: { enabled: false },
-    }),
-    [perDoctor]
-  );
+  const perDoctorChartOptions = {
+    chart: { type: "column", backgroundColor: "transparent" },
+    title: { text: "" },
+    xAxis: {
+      categories: perDoctor.map((d) => d.doctor),
+      labels: { rotation: -25, style: { fontSize: "11px" } },
+    },
+    yAxis: { title: { text: "Appointments" } },
+    series: [
+      { name: "Total", data: perDoctor.map((d) => d.totalAppointments) },
+      { name: "Completed", data: perDoctor.map((d) => d.completed) },
+      { name: "Cancelled", data: perDoctor.map((d) => d.cancelled) },
+      { name: "Scheduled", data: perDoctor.map((d) => d.scheduled) },
+    ],
+    credits: { enabled: false },
+  };
 
+  // ======================= UI ============================
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+
+      {/* HEADER */}
+      <div className="flex items-center justify-between w-full">
         <div>
           <h2 className="text-3xl font-black text-gray-900">Appointments</h2>
           <p className="text-gray-500 mt-1">Schedule and manage appointments</p>
         </div>
-        <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition">
-          Schedule Appointment
-        </button>
+
+        {/* SEARCH + BUTTON */}
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            placeholder="Search appointments..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-xl text-sm w-64"
+          />
+
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-sm transition">
+            Schedule Appointment
+          </button>
+        </div>
       </div>
 
-      {/* 🔹 Loader / Error */}
+      {/* ===== APPLE STYLE FILTER BAR ===== */}
+      <div className="flex justify-end w-full">
+        <div className="flex flex-wrap items-center gap-3 bg-gray-100 p-3 rounded-2xl shadow-sm border border-gray-200">
+
+          {/* Status Filter */}
+          <select
+            className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm shadow-sm 
+                       focus:ring-2 focus:ring-blue-400 outline-none transition"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+
+          {/* Doctor Filter */}
+          <select
+            className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm shadow-sm 
+                       focus:ring-2 focus:ring-blue-400 outline-none transition"
+            value={doctorFilter}
+            onChange={(e) => setDoctorFilter(e.target.value)}
+          >
+            <option value="All">All Doctors</option>
+            {Array.from(new Set(appointments.map((a) => a.doctorName))).map(
+              (doc) => (
+                <option key={doc} value={doc}>
+                  {doc}
+                </option>
+              )
+            )}
+          </select>
+
+          {/* Date Filter */}
+          <select
+            className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm shadow-sm 
+                       focus:ring-2 focus:ring-blue-400 outline-none transition"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          >
+            <option value="All">All Dates</option>
+            <option value="Today">Today</option>
+            <option value="Week">This Week</option>
+            <option value="Month">This Month</option>
+            <option value="Range">Custom Range</option>
+          </select>
+
+          {/* Custom Range */}
+          {dateFilter === "Range" && (
+            <>
+              <input
+                type="date"
+                className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm shadow-sm 
+                           focus:ring-2 focus:ring-blue-400 outline-none transition"
+                value={customRange.from}
+                onChange={(e) =>
+                  setCustomRange({ ...customRange, from: e.target.value })
+                }
+              />
+
+              <input
+                type="date"
+                className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm shadow-sm 
+                           focus:ring-2 focus:ring-blue-400 outline-none transition"
+                value={customRange.to}
+                onChange={(e) =>
+                  setCustomRange({ ...customRange, to: e.target.value })
+                }
+              />
+            </>
+          )}
+
+        </div>
+      </div>
+
+      {/* DATA */}
       {loading.appointments ? (
-        <Loader /> // 👈 Show spinner during loading
+        <Loader />
       ) : error.appointments ? (
-        <LoadingError loading={loading.appointments} error={error.appointments} />
-      ) : appointments?.length ? (
+        <LoadingError error={error.appointments} />
+      ) : filteredAppointments.length ? (
         <>
-          {/* ✅ Charts Section */}
+          {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Appointment Trends</h3>
+            <div className="bg-white rounded-xl shadow-md p-6 border">
+              <h3 className="text-xl font-bold mb-6">Appointment Trends</h3>
               <HighchartsReact highcharts={Highcharts} options={trendChartOptions} />
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Appointments per Doctor</h3>
+            <div className="bg-white rounded-xl shadow-md p-6 border">
+              <h3 className="text-xl font-bold mb-6">Appointments per Doctor</h3>
               <HighchartsReact highcharts={Highcharts} options={perDoctorChartOptions} />
             </div>
           </div>
 
-          {/* ✅ Appointment Table */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-md border overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Patient</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Doctor</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Time</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Patient</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Doctor</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Time</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {appointments.map((a) => (
-                  <tr
-                    key={a.appointment_id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition"
-                  >
-                    <td className="px-6 py-4 font-semibold text-gray-900">{a.patientName}</td>
-                    <td className="px-6 py-4 text-gray-600">{a.doctorName}</td>
-                    <td className="px-6 py-4 text-gray-900 font-medium">
-                      {new Date(a.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-gray-900">{a.time}</td>
+                {filteredAppointments.map((a) => (
+                  <tr key={a.appointment_id} className="border-b hover:bg-gray-50">
+                    <td className="px-6 py-4 font-semibold">{a.patientName}</td>
+                    <td className="px-6 py-4">{a.doctorName}</td>
+                    <td className="px-6 py-4">{new Date(a.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">{a.time}</td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
                         {a.type}
@@ -224,62 +347,9 @@ export default function AppointmentTab() {
               </tbody>
             </table>
           </div>
-
-          {/* ✅ Appointment Management Section */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mt-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Appointment Management
-              </h3>
-              <button
-                onClick={() => navigate("/schedule")}
-                className="bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100"
-              >
-                Manage Schedule
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <CardItem
-                icon={<Users />}
-                color="blue"
-                title="Patients"
-                desc="View and manage patients"
-                linkText="Go to Patients →"
-                onClick={() => navigate("/patients")}
-              />
-              <CardItem
-                icon={<BookOpen />}
-                color="purple"
-                title="Reports"
-                desc="Generate appointment reports"
-                linkText="Generate Reports →"
-                onClick={() => navigate("/reports")}
-              />
-            </div>
-          </div>
         </>
       ) : (
         <p className="text-gray-500 text-center py-16">No appointments found</p>
-      )}
-    </div>
-  );
-}
-
-// ✅ Reusable Card Component
-function CardItem({ icon, color, title, desc, linkText, onClick }) {
-  return (
-    <div
-      onClick={onClick}
-      className="flex flex-col items-center justify-center text-center bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition cursor-pointer"
-    >
-      <div className={`p-4 rounded-full mb-3 bg-${color}-100`}>{icon}</div>
-      <h4 className="text-lg font-semibold text-gray-900">{title}</h4>
-      <p className="text-gray-500 mb-2 text-sm">{desc}</p>
-      {linkText && (
-        <span className="text-blue-600 font-semibold text-sm hover:underline">
-          {linkText}
-        </span>
       )}
     </div>
   );
