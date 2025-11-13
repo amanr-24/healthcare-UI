@@ -33,7 +33,7 @@ export default function DepartmentTab() {
             "https://healthcare-backend-szmd.onrender.com/api/departments"
           ),
           axios.get(
-            "https://healthcare-backend-szmd.onrender.com/api/departments/statistics"
+            "https://healthcare-backend-szmd.onrender.com/api/departments/stats"
           ),
         ]);
 
