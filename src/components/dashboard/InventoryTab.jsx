@@ -1,9 +1,33 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import LoadingError from "../layout/LoadingError";
+import Loader from "../layout/Loader";
 import { Plus } from "lucide-react";
-import Loader from "../layout/Loader"; // 👈 Added Loader import
 
-export default function InventoryTab({ loading, error, inventory = {} }) {
+export default function InventoryTab() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [inventory, setInventory] = useState({});
+
+  // 🔹 Fetch Inventory Data
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          "https://healthcare-backend-szmd.onrender.com/api/inventory"
+        );
+        setInventory(res.data.data); // backend returns { data: { medical_supplies, equipment } }
+      } catch (err) {
+        setError(err.message || "Failed to load inventory");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInventory();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -21,9 +45,9 @@ export default function InventoryTab({ loading, error, inventory = {} }) {
         </button>
       </div>
 
-      {/* 🔹 Loader / Error Handling */}
+      {/* 🔹 Loader / Error */}
       {loading ? (
-        <Loader /> // 👈 Show spinner while fetching inventory
+        <Loader />
       ) : error ? (
         <LoadingError loading={loading} error={error} />
       ) : inventory.medical_supplies || inventory.equipment ? (
