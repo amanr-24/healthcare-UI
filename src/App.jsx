@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+
 import Sidebar from "./components/layout/Sidebar";
 import Topbar from "./components/layout/Topbar";
 import LoadingError from "./components/layout/LoadingError";
 
-// ✅ Import all dashboard pages
+// Dashboard pages
 import OverviewTab from "./components/dashboard/OverviewTab";
 import DepartmentTab from "./components/dashboard/DepartmentTab";
 import AppointmentTab from "./components/dashboard/AppointmentTab";
@@ -15,13 +16,23 @@ import StaffTab from "./components/dashboard/StaffTab";
 import VitalsTab from "./components/dashboard/VitalsTab";
 
 export default function App() {
-  // ✅ Sidebar open/collapse state
+  const location = useLocation();
+
+  // get path like "/appointments" → "appointments"
+  const currentPath = location.pathname.replace("/", "") || "overview";
+
+  // Sidebar states
   const [open, setOpen] = useState(true);
-  const [active, setActive] = useState("overview");
+  const [active, setActive] = useState(currentPath);
+
+  // Sync active state whenever the URL changes
+  useEffect(() => {
+    setActive(currentPath);
+  }, [currentPath]);
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden">
-      {/* ✅ Sidebar */}
+      {/* Sidebar */}
       <Sidebar
         open={open}
         setOpen={setOpen}
@@ -29,16 +40,14 @@ export default function App() {
         onSelect={(id) => setActive(id)}
       />
 
-      {/* ✅ Main Content Area */}
+      {/* Main content */}
       <div
         className={`flex flex-col flex-1 transition-all duration-300 ${
           open ? "ml-72" : "ml-20"
         }`}
       >
-        {/* ✅ Topbar */}
         <Topbar />
 
-        {/* ✅ Main Page Content */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50">
           <Routes>
             <Route path="/" element={<Navigate to="/overview" replace />} />
@@ -51,7 +60,7 @@ export default function App() {
             <Route path="/staff" element={<StaffTab />} />
             <Route path="/vitals" element={<VitalsTab />} />
 
-            {/* ✅ Fallback Route */}
+            {/* 404 Fallback */}
             <Route
               path="*"
               element={
