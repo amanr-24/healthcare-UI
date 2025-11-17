@@ -47,8 +47,8 @@ export default function OverviewTab() {
           axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/demographics/gender"),
           axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/demographics/age"),
           axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/demographics/insurance"),
-          axios.get("http://localhost:47815/api/vitals"),
-          axios.get("http://localhost:47815/api/activities/recent"),
+          axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/vitals"),
+          axios.get("https://healthcare-dashboard-n8rs.onrender.com/api/activities/recent"),
         ]);
 
         setDepartments(deptRes.data || []);
