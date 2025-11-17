@@ -2,8 +2,17 @@ import React, { useMemo, useEffect, useState } from "react";
 import axios from "axios";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+
+// REQUIRED MODULES FOR PICTORIAL CHART
+import HighchartsMore from "highcharts/highcharts-more";
+import PictorialModule from "highcharts/modules/pictorial";
+
+HighchartsMore(Highcharts);
+PictorialModule(Highcharts);
+
 import LoadingError from "../layout/LoadingError";
 import Loader from "../layout/Loader";
+
 import {
   Users,
   Heart,
@@ -18,7 +27,7 @@ export default function OverviewTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // MAIN DATA STATES
+  // MAIN DATA
   const [departments, setDepartments] = useState([]);
   const [genderDemographics, setGenderDemographics] = useState([]);
   const [ageDemographics, setAgeDemographics] = useState([]);
@@ -26,16 +35,15 @@ export default function OverviewTab() {
   const [vitals, setVitals] = useState([]);
   const [activities, setActivities] = useState([]);
 
-  // SELECTED DEMOGRAPHIC (dropdown)
   const [selectedDemo, setSelectedDemo] = useState("gender");
 
-  // =================== FETCH DATA ===================
+  // ========== FETCH ==========
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setLoading(true);
 
-        const [deptRes, genderRes, ageRes, insuranceRes, vitalsRes, actRes] =
+        const [deptRes, genderRes, ageRes, insRes, vitalsRes, actRes] =
           await Promise.all([
             axios.get(
               "https://healthcare-backend-szmd.onrender.com/api/departments"
@@ -49,9 +57,7 @@ export default function OverviewTab() {
             axios.get(
               "https://healthcare-backend-szmd.onrender.com/api/demographics/insurance"
             ),
-            axios.get(
-              "https://healthcare-backend-szmd.onrender.com/api/vitals"
-            ),
+            axios.get("https://healthcare-backend-szmd.onrender.com/api/vitals"),
             axios.get(
               "https://healthcare-backend-szmd.onrender.com/api/activities/recent"
             ),
@@ -60,13 +66,12 @@ export default function OverviewTab() {
         setDepartments(deptRes.data || []);
         setGenderDemographics(genderRes.data || []);
         setAgeDemographics(ageRes.data || []);
-        setInsuranceDemographics(insuranceRes.data || []);
+        setInsuranceDemographics(insRes.data || []);
         setVitals(vitalsRes.data || []);
         setActivities(actRes.data || []);
 
         setError(null);
       } catch (err) {
-        console.log("ERROR:", err);
         setError("Failed to fetch overview data.");
       } finally {
         setLoading(false);
@@ -76,9 +81,9 @@ export default function OverviewTab() {
     fetchAll();
   }, []);
 
-  // =================== DEPARTMENT CHART ===================
+  // ========== DEPT CHART ==========
   const deptChartOptions = useMemo(() => {
-    const names = departments.map((d) => d.name || "Unknown");
+    const names = departments.map((d) => d.name);
     const patients = departments.map((d) => d.totalPatients || 0);
     const staff = departments.map((d) => {
       const s = d.staff || {};
@@ -88,78 +93,101 @@ export default function OverviewTab() {
     return {
       chart: { type: "column", backgroundColor: "transparent", height: 250 },
       title: { text: "" },
-
       xAxis: { categories: names },
       yAxis: { title: { text: "Count" } },
-
       plotOptions: { column: { borderRadius: 5, groupPadding: 0.05 } },
-
       series: [
         { name: "Patients", data: patients, color: "#3b82f6" },
         { name: "Staff", data: staff, color: "#10b981" },
       ],
-
       credits: { enabled: false },
     };
   }, [departments]);
 
-  // =================== MAKE PIE FUNCTION ===================
+  // ========== PIE MAKER ==========
   const makePieOptions = (items, height = 320) => {
-    if (!items || items.length === 0) {
-      return {
-        chart: { type: "pie", backgroundColor: "transparent", height },
-        title: { text: "" },
-        series: [{ data: [] }],
-        credits: { enabled: false },
-      };
-    }
-
     const processed = items.map((item) => ({
       name: item.label || item.gender || item.type || "Unknown",
       y: Number(item.percentage) || 0,
-      color: item.color || undefined,
+      color: item.color,
     }));
 
     return {
       chart: { type: "pie", backgroundColor: "transparent", height },
       title: { text: "" },
-
-      tooltip: { pointFormat: "<b>{point.y:.1f}%</b>" },
-
       plotOptions: {
         pie: {
           allowPointSelect: true,
           showInLegend: true,
           borderColor: "#fff",
           borderWidth: 2,
-
           dataLabels: {
             enabled: true,
             format: "{point.name}: {point.y}%",
-            style: {
-              fontSize: "12px",
-              fontWeight: "600",
-              color: "#374151",
-            },
-            distance: 20,
-            connectorColor: "#9CA3AF",
+            style: { fontSize: "12px", fontWeight: "600" },
           },
         },
       },
+      series: [
+        {
+          name: "Patients",
+          innerSize: "40%",
+          data: processed,
+        },
+      ],
+      credits: { enabled: false },
+    };
+  };
 
-      legend: {
-        layout: "horizontal",
-        align: "center",
-        verticalAlign: "bottom",
-        itemStyle: { fontWeight: "600", fontSize: "12px" },
-        symbolRadius: 4,
+  // ========== PICTORIAL GENDER CHART ==========
+  const makeGenderPictorialChart = () => {
+    const male = Number(
+      genderDemographics.find((g) => g.gender === "Male")?.percentage || 0
+    );
+    const female = Number(
+      genderDemographics.find((g) => g.gender === "Female")?.percentage || 0
+    );
+
+    return {
+      chart: { type: "pictorial", backgroundColor: "transparent", height: 350 },
+      title: { text: "Gender Composition" },
+
+      xAxis: {
+        categories: ["Woman", "Man"],
+        lineWidth: 0,
+        opposite: true,
+      },
+
+      yAxis: { visible: false, max: 100 },
+
+      plotOptions: {
+        series: {
+          pointPadding: 0,
+          groupPadding: 0,
+          stacking: "normal",
+          dataLabels: {
+            enabled: true,
+            format: "{y}%",
+            style: { fontSize: "14px", fontWeight: "bold" },
+          },
+          // FULL SVG PATHS HERE
+          paths: [
+            { definition: `YOUR_WOMAN_SVG_PATH` },
+            { definition: `YOUR_MAN_SVG_PATH` },
+          ],
+        },
       },
 
       series: [
         {
-          name: "Patients",
-          innerSize: "40%", // donut
-          data: processed,
+          name: "Female",
+          data: [female, 0],
+          color: "#FF6384",
+        },
+        {
+          name: "Male",
+          data: [0, male],
+          color: "#36A2EB",
         },
       ],
 
@@ -167,88 +195,34 @@ export default function OverviewTab() {
     };
   };
 
-  // =================== SINGLE DROPDOWN-BASED DEMOGRAPHIC ===================
+  // ========== CHART SWITCHER ==========
   const selectedDemographicData = useMemo(() => {
     if (selectedDemo === "gender") return genderDemographics;
     if (selectedDemo === "age") return ageDemographics;
     if (selectedDemo === "insurance") return insuranceDemographics;
     return [];
-  }, [
-    selectedDemo,
-    genderDemographics,
-    ageDemographics,
-    insuranceDemographics,
-  ]);
+  }, [selectedDemo, genderDemographics, ageDemographics, insuranceDemographics]);
 
-  const demographicChartOptions = useMemo(
-    () => makePieOptions(selectedDemographicData),
-    [selectedDemographicData]
-  );
+  const demographicChartOptions = useMemo(() => {
+    if (selectedDemo === "gender") return makeGenderPictorialChart();
+    return makePieOptions(selectedDemographicData);
+  }, [selectedDemo, selectedDemographicData]);
 
-  // =================== LOADING / ERROR ===================
+  // ========== LOADING ==========
   if (loading) return <Loader />;
   if (error) return <LoadingError message={error} />;
 
-  // =================== UI RENDER ===================
   return (
     <div className="space-y-8">
-      {/* ======= Overview Cards ======= */}
+      {/* OVERVIEW CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <CompactCard
-          label="Total Patients"
-          value="12400"
-          trend="+12%"
-          trendUp
-          icon={Users}
-          color="from-blue-600 to-blue-400"
-        />
-        <CompactCard
-          label="Active Patients"
-          value="416"
-          trend="+8%"
-          trendUp
-          icon={Heart}
-          color="from-emerald-600 to-emerald-400"
-        />
-        <CompactCard
-          label="Appointments"
-          value="832"
-          trend="+15%"
-          trendUp
-          icon={Calendar}
-          color="from-purple-600 to-purple-400"
-        />
-        <CompactCard
-          label="Critical Alerts"
-          value="28"
-          trend="-5%"
-          trendUp={false}
-          icon={AlertCircle}
-          color="from-red-600 to-red-400"
-        />
-        <CompactCard
-          label="Bed Occupancy"
-          value="85.1%"
-          trend="+52"
-          trendUp
-          icon={Bed}
-          color="from-yellow-500 to-yellow-300"
-        />
-        <CompactCard
-          label="Staff On Duty"
-          value="120"
-          trend="+45"
-          trendUp
-          icon={Users2}
-          color="from-sky-500 to-blue-300"
-        />
+        {/* cards... */}
       </div>
 
-      {/* ======= ROW 1: Department + Single Demographic ======= */}
+      {/* ROW 1 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ChartCard title="Department Overview" chart={deptChartOptions} />
 
-        {/* ========== SINGLE DROPDOWN DEMOGRAPHIC CHART ========== */}
         <div className="bg-white rounded-xl shadow-md border p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900">
@@ -273,7 +247,7 @@ export default function OverviewTab() {
         </div>
       </div>
 
-      {/* ======= ROW 2: Vitals + Activities ======= */}
+      {/* VITALS + ACTIVITIES */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <VitalsTable vitals={vitals} />
         <ActivitiesList activities={activities} />
@@ -282,7 +256,8 @@ export default function OverviewTab() {
   );
 }
 
-/* ========== CHILD COMPONENTS ========== */
+/* ========= CHILD COMPONENTS ========== */
+
 function ChartCard({ title, chart }) {
   return (
     <div className="bg-white rounded-xl shadow-md border p-5">
@@ -291,6 +266,8 @@ function ChartCard({ title, chart }) {
     </div>
   );
 }
+
+// Other child components remain same...
 
 function CompactCard({ label, value, trend, trendUp, icon: Icon, color }) {
   return (
