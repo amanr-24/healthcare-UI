@@ -140,87 +140,85 @@ export default function FinancialTab() {
     [chartData]
   );
 
-  return (
-    <div className="space-y-8">
-      {/* 🔹 Year Selector */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Financial Overview</h2>
-        <div>
-          <label className="text-sm text-gray-600 mr-2">Select Year:</label>
-          <select
-            value={selectedYear || ""}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {availableYears?.length > 0 ? (
-              availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))
-            ) : (
-              <option disabled>Loading...</option>
-            )}
-          </select>
-        </div>
+ return (
+  <div className="relative space-y-8">
+    {/* Full Tab Loader */}
+    {loading && (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75">
+        <Loader />
       </div>
+    )}
 
-      {/* 🔹 Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-blue-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
-          <div>
-            <p className="text-sm opacity-90">Total Revenue</p>
-            <h3 className="text-3xl font-extrabold">
-              {formatCr(totalRevenue)}
-            </h3>
-          </div>
-          <DollarSign size={32} />
-        </div>
-
-        <div className="bg-red-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
-          <div>
-            <p className="text-sm opacity-90">Total Expenses</p>
-            <h3 className="text-3xl font-extrabold">
-              {formatCr(totalExpenses)}
-            </h3>
-          </div>
-          <TrendingDown size={32} />
-        </div>
-
-        <div className="bg-green-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
-          <div>
-            <p className="text-sm opacity-90">Net Profit</p>
-            <h3 className="text-3xl font-extrabold">{formatCr(netProfit)}</h3>
-          </div>
-          <TrendingUp size={32} />
-        </div>
-
-        <div className="bg-purple-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
-          <div>
-            <p className="text-sm opacity-90">Profit Margin</p>
-            <h3 className="text-3xl font-extrabold">{profitMargin}%</h3>
-          </div>
-          <DollarSign size={32} />
-        </div>
-      </div>
-
-      {/* 🔹 Chart Section */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-6">
-        <h3 className="text-lg font-semibold mb-4">
-          Financial Trends ({selectedYear})
-        </h3>
-
-        {loading ? (
-          <Loader />
-        ) : error ? (
-          <p className="text-red-500 text-sm">Error: {error}</p>
-        ) : (
-          <HighchartsReact
-            highcharts={Highcharts}
-            options={financialChartOptions}
-          />
-        )}
+    {/* 🔹 Year Selector */}
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-bold">Financial Overview</h2>
+      <div>
+        <label className="text-sm text-gray-600 mr-2">Select Year:</label>
+        <select
+          value={selectedYear || ""}
+          onChange={(e) => setSelectedYear(Number(e.target.value))}
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {availableYears?.length > 0 ? (
+            availableYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))
+          ) : (
+            <option disabled>Loading...</option>
+          )}
+        </select>
       </div>
     </div>
-  );
+
+    {/* 🔹 Stat Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-blue-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
+        <div>
+          <p className="text-sm opacity-90">Total Revenue</p>
+          <h3 className="text-3xl font-extrabold">{formatCr(totalRevenue)}</h3>
+        </div>
+        <DollarSign size={32} />
+      </div>
+
+      <div className="bg-red-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
+        <div>
+          <p className="text-sm opacity-90">Total Expenses</p>
+          <h3 className="text-3xl font-extrabold">{formatCr(totalExpenses)}</h3>
+        </div>
+        <TrendingDown size={32} />
+      </div>
+
+      <div className="bg-green-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
+        <div>
+          <p className="text-sm opacity-90">Net Profit</p>
+          <h3 className="text-3xl font-extrabold">{formatCr(netProfit)}</h3>
+        </div>
+        <TrendingUp size={32} />
+      </div>
+
+      <div className="bg-purple-600 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
+        <div>
+          <p className="text-sm opacity-90">Profit Margin</p>
+          <h3 className="text-3xl font-extrabold">{profitMargin}%</h3>
+        </div>
+        <DollarSign size={32} />
+      </div>
+    </div>
+
+    {/* 🔹 Chart Section */}
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-6">
+      <h3 className="text-lg font-semibold mb-4">
+        Financial Trends ({selectedYear})
+      </h3>
+
+      {error && <p className="text-red-500 text-sm">Error: {error}</p>}
+
+      {!error && !loading && (
+        <HighchartsReact highcharts={Highcharts} options={financialChartOptions} />
+      )}
+    </div>
+  </div>
+);
 }
