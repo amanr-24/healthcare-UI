@@ -132,47 +132,88 @@ export default function PatientTab() {
           </div>
 
           {/* MOBILE LIST view for small devices */}
-          <div className="block md:hidden space-y-3">
-            {filteredPatients.map((p) => (
-              <article key={p.id || p._id} className="bg-white rounded-xl shadow-sm border p-4">
-                <div className="flex items-start gap-3">
-                  {/* Avatar / initials */}
-                  <div className="flex-shrink-0">
-                    {/* try to use existing avatar if present, otherwise initials */}
-                    {p.avatar ? (
-                      <img src={p.avatar} alt={p.name || p.patientName} className="w-12 h-12 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                        {((p.name || p.patientName || "").split(" ").map(n => n[0]).slice(0,2)).join("")}
-                      </div>
-                    )}
-                  </div>
+<div className="block md:hidden space-y-4">
+  {filteredPatients.map((p) => (
+    <article
+      key={p.id || p._id}
+      className="bg-white rounded-xl shadow-md border border-gray-100 p-4"
+    >
+      <div className="flex items-start gap-4">
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{p.name || p.patientName || `${p.firstName || ""} ${p.lastName || ""}`}</p>
-                        <p className="text-xs text-gray-500">ID: {p.id || p._id || "N/A"}</p>
-                      </div>
+        {/* Avatar or initials */}
+        <div className="flex-shrink-0">
+          {p.avatar ? (
+            <img
+              src={p.avatar}
+              alt={p.name || p.patientName}
+              className="w-14 h-14 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-lg font-bold">
+              {((p.name || p.patientName || "")
+                .split(" ")
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("") || "NA")}
+            </div>
+          )}
+        </div>
 
-                      <div className="text-sm text-gray-600 text-right">
-                        <p>{p.age ? `${p.age}y` : p.dob ? `${calculateAge(p.dob)}y` : ""}{p.gender ? `, ${capitalize(p.gender)}` : ""}</p>
-                        <p className="text-xs text-gray-500 mt-1">{p.status || ""}</p>
-                      </div>
-                    </div>
+        {/* Right Section */}
+        <div className="flex-1 min-w-0">
 
-                    {/* meta row */}
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      {p.department && <span className="px-2 py-1 bg-gray-50 border rounded-lg">{p.department}</span>}
-                      {p.doctor && <span className="px-2 py-1 bg-gray-50 border rounded-lg">Dr. {p.doctor}</span>}
-                      {p.vitals && <span className="px-2 py-1 bg-gray-50 border rounded-lg">HR: {p.vitals.heartRate ?? "N/A"}</span>}
-                      {/* you can add more small badges here */}
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
+          {/* Name + ID + Age/Gender */}
+          <div className="flex justify-between flex-wrap">
+            <div className="min-w-0">
+              <p className="font-semibold text-gray-900 text-base break-words">
+                {p.name ||
+                  p.patientName ||
+                  `${p.firstName || ""} ${p.lastName || ""}`}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                ID: {p.id || p._id || "N/A"}
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-sm font-semibold text-gray-900">
+                {p.age ? `${p.age}y` : ""} {p.gender ? `, ${p.gender}` : ""}
+              </p>
+              <p className="text-xs text-blue-600 font-medium mt-0.5">
+                {p.status || "N/A"}
+              </p>
+            </div>
           </div>
+
+          {/* Badges Section */}
+          <div className="mt-3 flex flex-wrap gap-2">
+
+            {p.department && (
+              <span className="px-3 py-1 bg-gray-100 border rounded-full text-xs font-medium text-gray-700">
+                {p.department}
+              </span>
+            )}
+
+            {p.doctor && (
+              <span className="px-3 py-1 bg-gray-100 border rounded-full text-xs font-medium text-gray-700">
+                Dr. {p.doctor}
+              </span>
+            )}
+
+            {/* HR badge */}
+            {p.vitals?.heartRate && (
+              <span className="px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
+                HR: {p.vitals.heartRate}
+              </span>
+            )}
+
+          </div>
+        </div>
+      </div>
+    </article>
+  ))}
+</div>
+
         </>
       )}
     </div>
