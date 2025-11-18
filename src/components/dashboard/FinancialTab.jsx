@@ -43,7 +43,7 @@ export default function FinancialTab() {
 
         // 🔹 Monthly summary
         const monthlyRes = await axios.get(
-          `${API_BASE}/summary/monthly/year/${selectedYear}`
+          `${API_BASE}/summary/month/${selectedYear}`
         );
         setFinancialData(monthlyRes.data.data || []);
 
