@@ -216,7 +216,7 @@ export default function AppointmentTab() {
           />
 
           <button
-            onClick={() => alert("Add New Patient Form Coming Soon!")}
+            onClick={() => alert("Under Development!")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-sm transition"
           >
             Schedule Appointment
