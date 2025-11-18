@@ -21,7 +21,9 @@ export default function AppointmentTab() {
   const [loading, setLoading] = useState({ appointments: false });
   const [error, setError] = useState({ appointments: null });
 
-  const API_URL = import.meta.env.VITE_API_URL || "https://healthcare-backend-szmd.onrender.com";
+  const API_URL =
+    import.meta.env.VITE_API_URL ||
+    "https://healthcare-backend-szmd.onrender.com";
 
   // Fetch Appointments
   useEffect(() => {
@@ -71,7 +73,8 @@ export default function AppointmentTab() {
       data = data.filter((a) => {
         const d = new Date(a.date);
 
-        if (dateFilter === "Today") return d.toDateString() === today.toDateString();
+        if (dateFilter === "Today")
+          return d.toDateString() === today.toDateString();
 
         if (dateFilter === "Week") {
           const start = new Date();
@@ -82,7 +85,10 @@ export default function AppointmentTab() {
         }
 
         if (dateFilter === "Month") {
-          return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+          return (
+            d.getMonth() === today.getMonth() &&
+            d.getFullYear() === today.getFullYear()
+          );
         }
 
         if (dateFilter === "Range") {
@@ -97,7 +103,14 @@ export default function AppointmentTab() {
 
     const s = search.toLowerCase();
     return data.filter((a) => JSON.stringify(a).toLowerCase().includes(s));
-  }, [appointments, statusFilter, doctorFilter, dateFilter, customRange, search]);
+  }, [
+    appointments,
+    statusFilter,
+    doctorFilter,
+    dateFilter,
+    customRange,
+    search,
+  ]);
 
   // CHART DATA
   const { trends, perDoctor } = useMemo(() => {
@@ -106,7 +119,10 @@ export default function AppointmentTab() {
     const monthMap = {};
     for (const a of doctorAppts) {
       const d = new Date(a.date);
-      const key = d.toLocaleString("default", { month: "short", year: "numeric" });
+      const key = d.toLocaleString("default", {
+        month: "short",
+        year: "numeric",
+      });
 
       if (!monthMap[key])
         monthMap[key] = { total: 0, completed: 0, cancelled: 0, scheduled: 0 };
@@ -182,7 +198,6 @@ export default function AppointmentTab() {
   // ======================= UI ============================
   return (
     <div className="space-y-6">
-
       {/* HEADER */}
       <div className="flex items-center justify-between w-full">
         <div>
@@ -200,7 +215,10 @@ export default function AppointmentTab() {
             className="px-4 py-2 border border-gray-300 rounded-xl text-sm w-64"
           />
 
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-sm transition">
+          <button
+            onClick={() => alert("Add New Patient Form Coming Soon!")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-sm transition"
+          >
             Schedule Appointment
           </button>
         </div>
@@ -209,7 +227,6 @@ export default function AppointmentTab() {
       {/* ===== APPLE STYLE FILTER BAR ===== */}
       <div className="flex justify-end w-full">
         <div className="flex flex-wrap items-center gap-3 bg-gray-100 p-3 rounded-2xl shadow-sm border border-gray-200">
-
           {/* Status Filter */}
           <select
             className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm shadow-sm 
@@ -278,7 +295,6 @@ export default function AppointmentTab() {
               />
             </>
           )}
-
         </div>
       </div>
 
@@ -293,12 +309,20 @@ export default function AppointmentTab() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl shadow-md p-6 border">
               <h3 className="text-xl font-bold mb-6">Appointment Trends</h3>
-              <HighchartsReact highcharts={Highcharts} options={trendChartOptions} />
+              <HighchartsReact
+                highcharts={Highcharts}
+                options={trendChartOptions}
+              />
             </div>
 
             <div className="bg-white rounded-xl shadow-md p-6 border">
-              <h3 className="text-xl font-bold mb-6">Appointments per Doctor</h3>
-              <HighchartsReact highcharts={Highcharts} options={perDoctorChartOptions} />
+              <h3 className="text-xl font-bold mb-6">
+                Appointments per Doctor
+              </h3>
+              <HighchartsReact
+                highcharts={Highcharts}
+                options={perDoctorChartOptions}
+              />
             </div>
           </div>
 
@@ -307,20 +331,37 @@ export default function AppointmentTab() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Patient</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Doctor</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Time</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">
+                    Patient
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">
+                    Doctor
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">
+                    Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">
+                    Time
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">
+                    Type
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-bold">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAppointments.map((a) => (
-                  <tr key={a.appointment_id} className="border-b hover:bg-gray-50">
+                  <tr
+                    key={a.appointment_id}
+                    className="border-b hover:bg-gray-50"
+                  >
                     <td className="px-6 py-4 font-semibold">{a.patientName}</td>
                     <td className="px-6 py-4">{a.doctorName}</td>
-                    <td className="px-6 py-4">{new Date(a.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">
+                      {new Date(a.date).toLocaleDateString()}
+                    </td>
                     <td className="px-6 py-4">{a.time}</td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
