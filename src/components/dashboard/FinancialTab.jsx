@@ -41,11 +41,11 @@ export default function FinancialTab() {
         setLoading(true);
         setError("");
 
-        // 🔹 Monthly summary
-        const monthlyRes = await axios.get(
+        // 🔹 Month summary
+        const monthRes = await axios.get(
           `${API_BASE}/summary/month/${selectedYear}`
         );
-        setFinancialData(monthlyRes.data.data || []);
+        setFinancialData(monthRes.data.data || []);
 
         // 🔹 Yearly summary (for stat cards)
         const summaryRes = await axios.get(
